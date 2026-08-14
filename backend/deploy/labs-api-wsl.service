@@ -1,0 +1,21 @@
+[Unit]
+Description=LabsOS API (WSL development)
+After=network.target
+
+[Service]
+Type=simple
+Environment=LABSOS_MODE=linux
+Environment=LABSOS_ADDR=0.0.0.0:18080
+ExecStart=/usr/local/bin/labs-api
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

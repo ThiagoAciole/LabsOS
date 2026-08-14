@@ -1,6 +1,61 @@
-import { MoreHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import type { DashboardApp } from "../../../types"
-export function AppCard({ app }: { app: DashboardApp }) { return <Card className="flex min-h-64 flex-col"><CardContent className="flex flex-1 flex-col items-center justify-center gap-4 p-5"><img src={app.icon} alt={`Logo do ${app.name}`} className="size-16 object-contain" /><div className="w-full text-center"><h3 className="truncate font-medium">{app.name}</h3><p className="truncate text-xs text-muted-foreground">{app.url}</p></div><span className="flex items-center gap-2 text-xs text-muted-foreground"><span className="size-1.5 rounded-full bg-emerald-500" />Em execução</span></CardContent><CardContent className="flex gap-2 p-3 pt-0"><Button variant="secondary" className="flex-1">Abrir</Button><DropdownMenu><DropdownMenuTrigger render={<Button size="icon" variant="secondary" aria-label={`Mais opções de ${app.name}`} />}><MoreHorizontal /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem>Abrir</DropdownMenuItem><DropdownMenuItem>Reiniciar</DropdownMenuItem><DropdownMenuItem>Parar</DropdownMenuItem></DropdownMenuContent></DropdownMenu></CardContent></Card> }
+import { MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { DashboardApp } from "../../../types";
+export function AppCard({ app }: { app: DashboardApp }) {
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-3 p-3">
+        <img
+          src={app.icon}
+          alt={`Logo do ${app.name}`}
+          className="size-10 shrink-0 object-contain"
+        />
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-medium">{app.name}</h3>
+          <span className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            Em execução
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="min-h-11"
+            disabled
+            aria-label={`Abrir ${app.name} (aguardando integração do servidor)`}
+          >
+            Abrir
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="size-11"
+                  aria-label={`Mais opções de ${app.name}`}
+                />
+              }
+            >
+              <MoreHorizontal />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled>Reiniciar</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" disabled>
+                Parar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

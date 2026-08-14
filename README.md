@@ -1,21 +1,26 @@
-# React + TypeScript + Vite + shadcn/ui
+# LabsOS
 
-This is a template for a new Vite project with React, TypeScript, and shadcn/ui.
+Base consolidada do LabsOS:
 
-## Adding components
+- `src/` e `public/`: frontend React atual;
+- `backend/`: Labs API em Go;
+- `specs/backend/`: contrato e arquitetura atuais do backend.
 
-To add components to your app, run the following command:
+Home, Apps, App Store e Settings usam a Labs API. Files permanece independente nesta etapa.
 
-```bash
-npx shadcn@latest add button
+## Desenvolvimento
+
+Frontend: `pnpm dev`.
+
+Backend mock:
+
+```powershell
+cd C:\Projetos\LabsOS\backend
+$env:LABSOS_MODE = "mock"
+$env:LABSOS_ADDR = "127.0.0.1:18080"
+go run ./cmd/labs-api
 ```
 
-This will place the ui components in the `src/components` directory.
+Em outro terminal, execute `pnpm dev`. O Vite encaminha `/api` para a API mock no Windows ou para o LinuxProvider no WSL, conforme o processo ativo em `localhost:18080`.
 
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button"
-```
+Detalhes: [`specs/backend/DEVELOPMENT.md`](specs/backend/DEVELOPMENT.md).

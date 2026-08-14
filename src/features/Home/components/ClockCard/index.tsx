@@ -1,4 +1,26 @@
-import { CloudRain, MapPin } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { clockData } from "../../data"
-export function ClockCard() { return <Card className="flex min-h-44 flex-col"><CardHeader className="flex-row items-center justify-between space-y-0"><span className="flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="size-4" />{clockData.city}</span><span className="flex items-center gap-2"><CloudRain className="size-4 text-primary" />{clockData.temperature}°</span></CardHeader><CardContent className="flex flex-1 flex-col items-center justify-center gap-3"><time className="text-6xl font-semibold tracking-tighter tabular-nums">{clockData.time}</time><span className="text-sm text-muted-foreground">{clockData.date}</span></CardContent></Card> }
+import { CloudRain, MapPin } from "lucide-react";
+import { clockData } from "../../data";
+export function ClockCard() {
+  return (
+    <aside
+      className="hidden flex-col items-end gap-1.5 text-right text-sm text-muted-foreground md:flex"
+      aria-label="Horário e clima local"
+    >
+      <div>
+        <time
+          dateTime="2026-09-16T10:31:00-03:00"
+          className="block text-base font-semibold text-foreground tabular-nums"
+        >
+          {clockData.time}
+        </time>
+        <span className="block text-sm">{clockData.date}</span>
+      </div>
+      <span className="flex items-center gap-2 text-sm">
+        <MapPin className="size-4" />
+        {clockData.city}
+        <CloudRain className="ml-1 size-4 text-primary" />
+        {clockData.temperature}°
+      </span>
+    </aside>
+  );
+}

@@ -16,7 +16,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, [])
 
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
+    <Sidebar className="items-center" variant="inset" collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -27,11 +27,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="px-3">
+      <SidebarContent >
         <SidebarMenu>
           {navigation.map(({ title, href, icon: Icon }) => (
             <SidebarMenuItem key={href}>
-              <SidebarMenuButton isActive={pathname === href} tooltip={title} render={<a href={href} onClick={(event) => { event.preventDefault(); navigate(href) }}  />}>
+              <SidebarMenuButton className="p-2 py-6" isActive={pathname === href} tooltip={title} render={<a href={href} onClick={(event) => { event.preventDefault(); navigate(href) }}  />}>
                 <Icon />
                 <span>{title}</span>
               </SidebarMenuButton>
