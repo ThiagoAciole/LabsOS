@@ -1,0 +1,4 @@
+import { CloudRain, MapPin } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { clockData } from "../../data"
+export function ClockCard() { return <Card className="flex min-h-44 flex-col"><CardHeader className="flex-row items-center justify-between space-y-0"><span className="flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="size-4" />{clockData.city}</span><span className="flex items-center gap-2"><CloudRain className="size-4 text-primary" />{clockData.temperature}°</span></CardHeader><CardContent className="flex flex-1 flex-col items-center justify-center gap-3"><time className="text-6xl font-semibold tracking-tighter tabular-nums">{clockData.time}</time><span className="text-sm text-muted-foreground">{clockData.date}</span></CardContent></Card> }
