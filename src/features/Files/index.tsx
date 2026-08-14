@@ -1,6 +1,7 @@
 import { FolderOpen } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
+import { env } from "@/lib/env"
 
 export function FilesPage() {
   return (
@@ -9,13 +10,19 @@ export function FilesPage() {
         <h1 className="text-3xl font-medium tracking-tight">Files</h1>
         <p className="mt-1 text-muted-foreground">Arquivos do LabsOS</p>
       </div>
-      <Card>
-        <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 text-center">
-          <FolderOpen className="size-8 text-primary" />
-          <p className="font-medium">Nenhum arquivo disponível</p>
-          <p className="text-sm text-muted-foreground">O explorador de arquivos será exibido aqui.</p>
-        </CardContent>
-      </Card>
+      {env.filesUrl ? (
+        <Card className="min-h-[calc(100vh-12rem)] overflow-hidden">
+          <iframe className="h-[calc(100vh-12rem)] w-full border-0" src={env.filesUrl} title="Gerenciador de arquivos" />
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 text-center">
+            <FolderOpen className="size-8 text-primary" />
+            <p className="font-medium">Gerenciador de arquivos indisponível</p>
+            <p className="text-sm text-muted-foreground">O System File App ainda não foi provisionado neste servidor.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

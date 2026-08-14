@@ -28,5 +28,6 @@ export interface StoreApp {
   source: AppSource;
   version: string;
   size: string;
-  highlights: string[];
+	highlights: string[];
+	installable?: boolean;
 }

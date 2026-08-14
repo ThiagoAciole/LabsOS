@@ -1,0 +1,37 @@
+name: LabsOS release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: backend/go.mod }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: corepack enable && pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: |
+          mkdir -p release/bin release/dashboard
+          GOOS=linux GOARCH=amd64 go build -o release/bin/labs-api ./cmd/labs-api
+          GOOS=linux GOARCH=amd64 go build -o release/bin/labsd ./cmd/labsd
+          GOOS=linux GOARCH=amd64 go build -o release/bin/labs-dashboard ./cmd/labs-dashboard
+          cp -a ../dist/. release/dashboard/
+          version="${GITHUB_REF_NAME#v}"
+          printf '{"version":"%s"}\n' "$version" > release/version.json
+          tar -czf "labsos-v${version}-linux-amd64.tar.gz" -C release .
+          sha256sum "labsos-v${version}-linux-amd64.tar.gz" > "labsos-v${version}-linux-amd64.tar.gz.sha256"
+          printf '{"version":"%s","artifactUrl":"https://github.com/%s/releases/download/%s/labsos-v%s-linux-amd64.tar.gz","sha256":"%s"}\n' "$version" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" "$version" "$(cut -d' ' -f1 labsos-v${version}-linux-amd64.tar.gz.sha256)" > version-manifest.json
+        working-directory: backend
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            backend/labsos-v*-linux-amd64.tar.gz
+            backend/labsos-v*-linux-amd64.tar.gz.sha256
+            backend/version-manifest.json

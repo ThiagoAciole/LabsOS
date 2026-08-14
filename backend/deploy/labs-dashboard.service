@@ -1,0 +1,25 @@
+[Unit]
+Description=LabsOS local dashboard
+After=network.target labs-api.service
+Requires=labs-api.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+Environment=LABSOS_DASHBOARD_ROOT=/opt/labsos/dashboard
+Environment=LABSOS_LAN_CIDR=192.168.0.0/24
+ExecStart=/usr/local/bin/labs-dashboard
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ReadOnlyPaths=/opt/labsos/dashboard
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

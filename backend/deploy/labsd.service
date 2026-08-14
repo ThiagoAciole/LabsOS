@@ -1,0 +1,17 @@
+[Unit]
+Description=LabsOS privileged typed runtime boundary
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/labsd
+Restart=on-failure
+RestartSec=2
+User=root
+Group=agent
+RuntimeDirectory=labsos
+RuntimeDirectoryMode=0750
+
+[Install]
+WantedBy=multi-user.target

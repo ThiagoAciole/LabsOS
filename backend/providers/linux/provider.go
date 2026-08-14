@@ -4,19 +4,44 @@ import (
 	"context"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"labsos/backend/catalog"
 	"labsos/backend/internal/platform"
+	"labsos/backend/labsd"
 	"labsos/backend/providers/mock"
+	"labsos/backend/update"
 )
 
-type Provider struct{ fallback *mock.Provider }
+type Provider struct {
+	fallback *mock.Provider
+	apps     labsd.Client
+	catalog  catalog.Provider
+}
 
-func New() *Provider           { return &Provider{fallback: mock.New()} }
-func (*Provider) Mode() string { return "linux" }
+func New() *Provider {
+	url := os.Getenv("LABSOS_CATALOG_URL")
+	if url == "" {
+		url = "https://raw.githubusercontent.com/IceWhaleTech/CasaOS-AppStore/gh-pages/index.json"
+	}
+	remote := catalog.CasaOSCatalogAdapter{Remote: catalog.RemoteProvider{URL: url}, SourceName: "CasaOS/ZimaOS AppStore"}
+	bigbear := catalog.GitComposeProvider{URL: "https://github.com/bigbeartechworld/big-bear-casaos", SourceName: "BigBearCasaOS"}
+	provider := catalog.CachedFetchProvider{Fetch: func(ctx context.Context) ([]catalog.App, error) {
+		casa, _ := remote.Remote.ListApps(ctx)
+		for i := range casa {
+			casa[i].Source = remote.SourceName
+		}
+		bear, _ := bigbear.ListApps()
+		return append(casa, bear...), nil
+	}, Cache: catalog.FileCache{Path: "/var/lib/labsos/catalog/apps.json"}}
+	return &Provider{fallback: mock.New(), apps: labsd.Client{Socket: "/run/labsos/labsd.sock"}, catalog: provider}
+}
+func NewWithApps(apps labsd.Client) *Provider { return &Provider{fallback: mock.New(), apps: apps} }
+func (*Provider) Mode() string                { return "linux" }
 
 func (*Provider) SystemSummary(ctx context.Context) (platform.SystemSummary, error) {
 	statBefore, err := os.ReadFile("/proc/stat")
@@ -62,8 +87,12 @@ func (*Provider) SystemSummary(ctx context.Context) (platform.SystemSummary, err
 	if err != nil {
 		return platform.SystemSummary{}, platform.ErrUnavailable
 	}
+	storageUsed, storageTotal := filesystemUsage("/DATA")
+	if storageTotal == 0 {
+		storageUsed, storageTotal = filesystemUsage("/")
+	}
 
-	summary := platform.SystemSummary{Hostname: hostname, Status: "healthy", UptimeSeconds: uptime, Version: "0.1.0", CPUUsage: cpuUsage(before, after), MemoryUsed: memoryUsed, MemoryTotal: memoryTotal, Temperature: temperature(), NetworkOnline: false}
+	summary := platform.SystemSummary{Hostname: hostname, Status: "healthy", UptimeSeconds: uptime, Version: "0.1.0", CPUUsage: cpuUsage(before, after), MemoryUsed: memoryUsed, MemoryTotal: memoryTotal, StorageUsed: storageUsed, StorageTotal: storageTotal, Temperature: temperature(), NetworkOnline: false}
 	if address := primaryAddress(); address != "" {
 		summary.IPAddress, summary.NetworkOnline = address, true
 	}
@@ -88,13 +117,164 @@ func (*Provider) Power(context.Context, string) (platform.Job, error) {
 	return platform.Job{}, platform.ErrUnavailable
 }
 func (p *Provider) Apps(ctx context.Context, catalog bool) ([]platform.App, error) {
-	return p.fallback.Apps(ctx, catalog)
+	if catalog {
+		if p.catalog == nil {
+			return nil, platform.ErrUnavailable
+		}
+		items, err := p.catalog.ListApps()
+		if err != nil {
+			return nil, platform.ErrUnavailable
+		}
+		result := make([]platform.App, 0, len(items))
+		for _, item := range items {
+			result = append(result, platform.App{ID: item.ID, Kind: platform.AppKindUser, Name: item.Name, Icon: item.Icon, Description: item.Description, Category: item.Category, Source: item.Source, Version: item.Version, Installable: item.Installable})
+		}
+		if !catalogHas(result, "jellyfin") {
+			result = append(result, platform.App{ID: "jellyfin", Kind: platform.AppKindUser, Name: "Jellyfin", Icon: "/app-icons/jellyfin.svg", Description: "Personal media server", Category: "media", Source: "labs", Version: "10.10.7", Installable: true})
+		}
+		return result, nil
+	}
+	names, err := p.apps.List(ctx)
+	if err != nil {
+		status, statusErr := p.apps.Status(ctx, "jellyfin")
+		if statusErr != nil {
+			return nil, platform.ErrUnavailable
+		}
+		if status != "running" {
+			status = "stopped"
+		}
+		return []platform.App{{ID: "jellyfin", Kind: platform.AppKindUser, Name: "Jellyfin", Icon: "/app-icons/jellyfin.svg", Description: "Personal media server", Status: status, Installed: true}}, nil
+	}
+	result := make([]platform.App, 0, len(names))
+	for _, id := range names {
+		if strings.Contains(id, "-") && !labsdHasApp([]string{"jellyfin", "syncthing"}, id) {
+			continue
+		}
+		name, icon, description := id, "", "Installed Docker Compose app"
+		switch id {
+		case "jellyfin":
+			name, icon, description = "Jellyfin", "/app-icons/jellyfin.svg", "Personal media server"
+		case "syncthing":
+			name, description = "Syncthing", "Continuous file synchronization"
+		}
+		status, statusErr := p.apps.Status(ctx, id)
+		if statusErr != nil || status != "running" {
+			status = "stopped"
+		}
+		result = append(result, platform.App{ID: id, Kind: platform.AppKindUser, Name: name, Icon: icon, Description: description, Status: status, Installed: true})
+	}
+	return result, nil
+}
+
+func labsdHasApp(names []string, id string) bool {
+	for _, name := range names {
+		if name == id {
+			return true
+		}
+	}
+	return false
+}
+func catalogHas(apps []platform.App, id string) bool {
+	for _, app := range apps {
+		if app.ID == id {
+			return true
+		}
+	}
+	return false
 }
 func (p *Provider) AppAction(ctx context.Context, id, action string) (platform.Job, error) {
-	return p.fallback.AppAction(ctx, id, action)
+	if id != "" {
+		operation := map[string]string{"install": "InstallApp", "start": "StartApp", "stop": "StopApp", "restart": "RestartApp"}[action]
+		if operation == "" {
+			return platform.Job{}, platform.ErrUnsupported
+		}
+		var err error
+		if action == "install" && p.catalog != nil {
+			app, lookupErr := p.catalog.GetApp(id)
+			if lookupErr == nil && app.Compose != "" {
+				err = p.apps.Install(ctx, id, app.Compose)
+			} else {
+				err = p.apps.Call(ctx, operation, id)
+			}
+		} else {
+			err = p.apps.Call(ctx, operation, id)
+		}
+		if err != nil {
+			return platform.Job{}, platform.ErrUnavailable
+		}
+		return platform.Job{ID: id + "-" + action, Status: "success", Message: id + " " + action + " completed"}, nil
+	}
+	return platform.Job{}, platform.ErrNotFound
 }
 func (p *Provider) RemoveApp(ctx context.Context, id string) (platform.Job, error) {
-	return p.fallback.RemoveApp(ctx, id)
+	if id != "" {
+		if err := p.apps.Call(ctx, "RemoveApp", id); err != nil {
+			return platform.Job{}, platform.ErrUnavailable
+		}
+		return platform.Job{ID: id + "-remove", Status: "success", Message: id + " removed"}, nil
+	}
+	return platform.Job{}, platform.ErrNotFound
+}
+
+func (p *Provider) AppLogs(ctx context.Context, id string, lines int) (string, error) {
+	logs, err := p.apps.Logs(ctx, id, lines)
+	if err != nil {
+		return "", platform.ErrUnavailable
+	}
+	return logs, nil
+}
+func (*Provider) CatalogSources(context.Context) ([]platform.CatalogSource, error) {
+	items := catalog.DefaultSources()
+	result := make([]platform.CatalogSource, len(items))
+	for i, item := range items {
+		result[i] = platform.CatalogSource{ID: item.ID, Name: item.Name, URL: item.URL, Kind: item.Kind}
+	}
+	return result, nil
+}
+func (p *Provider) UpdateStatus(ctx context.Context) (platform.UpdateStatus, error) {
+	manager := update.Manager{Root: "/opt/labsos", ManifestURL: os.Getenv("LABSOS_UPDATE_MANIFEST_URL")}
+	status, err := manager.Check(ctx)
+	return platform.UpdateStatus{CurrentVersion: status.CurrentVersion, LatestVersion: status.LatestVersion, UpdateAvailable: status.UpdateAvailable}, err
+}
+func (p *Provider) ApplyUpdate(ctx context.Context) (platform.UpdateStatus, error) {
+	manager := update.Manager{Root: envOr("LABSOS_UPDATE_STAGING", "/var/lib/labsos/update"), ManifestURL: os.Getenv("LABSOS_UPDATE_MANIFEST_URL")}
+	status, err := manager.Update(ctx)
+	if err != nil {
+		return platform.UpdateStatus{}, err
+	}
+	stagedRelease := filepath.Join(manager.Root, "releases", status.CurrentVersion)
+	release := filepath.Join("/opt/labsos/releases", status.CurrentVersion)
+	if err := exec.CommandContext(ctx, "sudo", "-n", "mkdir", "-p", release).Run(); err != nil {
+		return platform.UpdateStatus{}, err
+	}
+	if err := exec.CommandContext(ctx, "sudo", "-n", "cp", "-a", stagedRelease+"/.", release+"/").Run(); err != nil {
+		return platform.UpdateStatus{}, err
+	}
+	if err := exec.CommandContext(ctx, "sudo", "-n", "ln", "-sfn", release, "/opt/labsos/current").Run(); err != nil {
+		return platform.UpdateStatus{}, err
+	}
+	for _, binary := range []string{"labs-api", "labsd", "labs-dashboard"} {
+		if err := exec.CommandContext(ctx, "sudo", "-n", "install", "-m", "0755", filepath.Join(release, "bin", binary), "/usr/local/bin/"+binary).Run(); err != nil {
+			return platform.UpdateStatus{}, err
+		}
+	}
+	if err := exec.CommandContext(ctx, "sudo", "-n", "mkdir", "-p", "/opt/labsos/dashboard.new").Run(); err != nil {
+		return platform.UpdateStatus{}, err
+	}
+	if err := exec.CommandContext(ctx, "sudo", "-n", "cp", "-a", filepath.Join(release, "dashboard", "."), "/opt/labsos/dashboard.new/").Run(); err != nil {
+		return platform.UpdateStatus{}, err
+	}
+	if err := exec.CommandContext(ctx, "sudo", "-n", "mv", "-T", "/opt/labsos/dashboard.new", "/opt/labsos/dashboard").Run(); err != nil {
+		return platform.UpdateStatus{}, err
+	}
+	go exec.Command("sudo", "-n", "systemctl", "restart", "labs-api", "labsd", "labs-dashboard").Run()
+	return platform.UpdateStatus{CurrentVersion: status.CurrentVersion, LatestVersion: status.LatestVersion}, nil
+}
+func envOr(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
 }
 func (p *Provider) Settings(ctx context.Context) (map[string]any, error) {
 	return p.fallback.Settings(ctx)

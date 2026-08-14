@@ -3,6 +3,7 @@ import { api, json } from "./client.ts"
 export type SystemSummaryDTO = { hostname: string; status: string; uptimeSeconds: number; version: string; cpuUsage: number; memoryUsedBytes: number; memoryTotalBytes: number; temperatureCelsius: number; storageUsedBytes: number; storageTotalBytes: number; ipAddress?: string; networkOnline?: boolean; networkDownloadBytesPerSecond?: number; networkUploadBytesPerSecond?: number }
 export type SystemHealthDTO = { status: string; mode: string; components: Record<string, string> }
 export type JobDTO = { id: string; status: string; message: string }
+export type UpdateStatusDTO = { currentVersion: string; latestVersion: string; updateAvailable: boolean }
 
 const percent = (used: number, total: number) => total > 0 ? Math.round((used / total) * 100) : 0
 const gib = (bytes: number) => `${(bytes / 1024 ** 3).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} GB`
@@ -22,3 +23,5 @@ export function toSystemDashboard(dto: SystemSummaryDTO) {
 export const getSystemSummary = () => api<SystemSummaryDTO>("/system/summary")
 export const getSystemHealth = () => api<SystemHealthDTO>("/system/health")
 export const runPowerAction = (action: "reboot" | "shutdown") => api<JobDTO>(`/system/${action}`, json("POST"))
+export const getSystemUpdate = () => api<UpdateStatusDTO>("/system/update")
+export const applySystemUpdate = () => api<UpdateStatusDTO>("/system/update", json("POST"))

@@ -34,16 +34,27 @@ type SystemHealth struct {
 	Components map[string]string `json:"components"`
 }
 
+type AppKind string
+
+const (
+	AppKindSystem AppKind = "system"
+	AppKindUser   AppKind = "user"
+)
+
 type App struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Icon            string `json:"icon"`
-	Description     string `json:"description"`
-	Status          string `json:"status"`
-	Version         string `json:"version,omitempty"`
-	URL             string `json:"url,omitempty"`
-	UpdateAvailable bool   `json:"updateAvailable"`
-	Installed       bool   `json:"installed"`
+	ID              string  `json:"id"`
+	Kind            AppKind `json:"kind,omitempty"`
+	Name            string  `json:"name"`
+	Icon            string  `json:"icon"`
+	Description     string  `json:"description"`
+	Category        string  `json:"category,omitempty"`
+	Source          string  `json:"source,omitempty"`
+	Status          string  `json:"status"`
+	Version         string  `json:"version,omitempty"`
+	URL             string  `json:"url,omitempty"`
+	UpdateAvailable bool    `json:"updateAvailable"`
+	Installed       bool    `json:"installed"`
+	Installable     bool    `json:"installable"`
 }
 
 type Event struct {
@@ -58,6 +69,18 @@ type Job struct {
 	Message string `json:"message"`
 }
 
+type CatalogSource struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	URL  string `json:"url"`
+	Kind string `json:"kind"`
+}
+type UpdateStatus struct {
+	CurrentVersion  string `json:"currentVersion"`
+	LatestVersion   string `json:"latestVersion"`
+	UpdateAvailable bool   `json:"updateAvailable"`
+}
+
 type Provider interface {
 	Mode() string
 	SystemSummary(context.Context) (SystemSummary, error)
@@ -66,6 +89,10 @@ type Provider interface {
 	Apps(context.Context, bool) ([]App, error)
 	AppAction(context.Context, string, string) (Job, error)
 	RemoveApp(context.Context, string) (Job, error)
+	AppLogs(context.Context, string, int) (string, error)
+	CatalogSources(context.Context) ([]CatalogSource, error)
+	UpdateStatus(context.Context) (UpdateStatus, error)
+	ApplyUpdate(context.Context) (UpdateStatus, error)
 	Settings(context.Context) (map[string]any, error)
 	UpdateSettings(context.Context, string, map[string]any) (map[string]any, error)
 	Events(context.Context) ([]Event, error)

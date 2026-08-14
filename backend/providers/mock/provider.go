@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"labsos/backend/catalog"
 	"labsos/backend/internal/platform"
 )
 
@@ -14,19 +15,25 @@ type Provider struct {
 	settings map[string]any
 	events   []platform.Event
 	jobs     map[string]platform.Job
+	catalog  catalog.Provider
 	nextID   int
 }
 
 func New() *Provider {
 	return &Provider{
 		apps: []platform.App{
-			{ID: "jellyfin", Name: "Jellyfin", Icon: "/app-icons/jellyfin.svg", Description: "Personal media server", Status: "running", Version: "10.10.7", URL: "http://labsos.local:8096", Installed: true},
-			{ID: "immich", Name: "Immich", Icon: "/app-icons/immich.svg", Description: "Photo and video backup", Status: "stopped", Version: "1.0.0", Installed: true},
-			{ID: "home-assistant", Name: "Home Assistant", Icon: "/app-icons/home-assistant.svg", Description: "Home automation", Status: "stopped"},
+			{ID: "jellyfin", Kind: platform.AppKindUser, Name: "Jellyfin", Icon: "/app-icons/jellyfin.svg", Description: "Personal media server", Status: "running", Version: "10.10.7", URL: "http://labsos.local:8096", Installed: true},
+			{ID: "immich", Kind: platform.AppKindUser, Name: "Immich", Icon: "/app-icons/immich.svg", Description: "Photo and video backup", Status: "stopped", Version: "1.0.0", Installed: true},
+			{ID: "home-assistant", Kind: platform.AppKindUser, Name: "Home Assistant", Icon: "/app-icons/home-assistant.svg", Description: "Home automation", Status: "stopped"},
 		},
 		settings: map[string]any{"hostname": "labsos-dev", "timezone": "America/Sao_Paulo", "language": "pt-BR", "dhcp": true},
 		events:   []platform.Event{{ID: "event-1", Type: "system", Message: "Labs API started in mock mode"}},
 		jobs:     make(map[string]platform.Job),
+		catalog: catalog.NewBuiltInProvider([]catalog.RemoteApp{
+			{ID: "jellyfin", Name: "Jellyfin", Description: "Personal media server", Category: "media", Version: "10.10.7", Icon: "/app-icons/jellyfin.svg"},
+			{ID: "immich", Name: "Immich", Description: "Photo and video backup", Category: "storage", Version: "1.0.0", Icon: "/app-icons/immich.svg"},
+			{ID: "home-assistant", Name: "Home Assistant", Description: "Home automation", Category: "utilities", Icon: "/app-icons/home-assistant.svg"},
+		}),
 	}
 }
 
@@ -50,6 +57,17 @@ func (p *Provider) Power(_ context.Context, action string) (platform.Job, error)
 func (p *Provider) Apps(_ context.Context, catalog bool) ([]platform.App, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	if catalog {
+		items, err := p.catalog.ListApps()
+		if err != nil {
+			return nil, err
+		}
+		apps := make([]platform.App, 0, len(items))
+		for _, item := range items {
+			apps = append(apps, platform.App{ID: item.ID, Kind: platform.AppKindUser, Name: item.Name, Icon: item.Icon, Description: item.Description, Category: item.Category, Source: item.Source, Version: item.Version})
+		}
+		return apps, nil
+	}
 	apps := make([]platform.App, 0, len(p.apps))
 	for _, app := range p.apps {
 		if catalog || app.Installed {
@@ -91,6 +109,17 @@ func (p *Provider) RemoveApp(_ context.Context, id string) (platform.Job, error)
 		}
 	}
 	return platform.Job{}, platform.ErrNotFound
+}
+
+func (*Provider) AppLogs(context.Context, string, int) (string, error) { return "mock logs", nil }
+func (*Provider) CatalogSources(context.Context) ([]platform.CatalogSource, error) {
+	return []platform.CatalogSource{{ID: "builtin", Name: "Labs", Kind: "builtin"}}, nil
+}
+func (*Provider) UpdateStatus(context.Context) (platform.UpdateStatus, error) {
+	return platform.UpdateStatus{CurrentVersion: "0.1.0", LatestVersion: "0.1.0"}, nil
+}
+func (*Provider) ApplyUpdate(context.Context) (platform.UpdateStatus, error) {
+	return platform.UpdateStatus{CurrentVersion: "0.1.0", LatestVersion: "0.1.0"}, nil
 }
 
 func (p *Provider) Settings(context.Context) (map[string]any, error) {

@@ -79,3 +79,12 @@ func TestErrorsAreStructured(t *testing.T) {
 		}
 	}
 }
+
+func TestAppLogsEndpointReturnsRecentLogs(t *testing.T) {
+	handler := api.New(mock.New())
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/api/v1/apps/jellyfin/logs?lines=20", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", response.Code)
+	}
+}

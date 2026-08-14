@@ -14,6 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": { target: "http://localhost:18080", changeOrigin: true },
+      "/file-manager": { target: "http://localhost:18081", changeOrigin: true, rewrite: (path) => path.replace(/^\/file-manager/, "") },
     },
   },
 })

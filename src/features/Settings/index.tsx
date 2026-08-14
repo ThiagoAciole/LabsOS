@@ -43,8 +43,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/theme-provider";
-import { settingsMock } from "./data";
-import { useNetworkSettingsMutation, usePowerMutation, useSettingsData, useSystemSettingsMutation } from "./queries";
+import { useNetworkSettingsMutation, usePowerMutation, useSettingsData, useSystemSettingsMutation, useSystemUpdateData, useSystemUpdateMutation } from "./queries";
 
 type SensitiveAction = "restart" | "shutdown";
 type Theme = "dark" | "light" | "system";
@@ -67,15 +66,14 @@ const actionCopy = {
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const query = useSettingsData();
+  const updateQuery = useSystemUpdateData();
+  const updateMutation = useSystemUpdateMutation();
   const systemMutation = useSystemSettingsMutation();
   const networkMutation = useNetworkSettingsMutation();
   const powerMutation = usePowerMutation();
   const [serverName, setServerName] = useState<string | null>(null);
   const [language, setLanguage] = useState<string | null>(null);
   const [remoteAccess, setRemoteAccess] = useState<boolean | null>(null);
-  const [automaticUpdates, setAutomaticUpdates] = useState<boolean>(
-    settingsMock.updates.automaticUpdates,
-  );
   const [pendingRemoteAccess, setPendingRemoteAccess] = useState<
     boolean | null
   >(null);
@@ -244,7 +242,7 @@ export function SettingsPage() {
           <SettingsRow
             icon={Server}
             label="LabsOS"
-            description={`Versão ${settingsMock.updates.version} · Atualizado`}
+            description={`Versão ${updateQuery.data?.currentVersion ?? summary.version}${updateQuery.data?.updateAvailable ? ` · Nova versão ${updateQuery.data.latestVersion}` : " · Atualizado"}`}
           />
           <SettingsRow
             icon={RefreshCw}
@@ -265,26 +263,19 @@ export function SettingsPage() {
             label="Atualizações automáticas"
             description="Mantenha o LabsOS atualizado automaticamente."
           >
-            <Switch
-              checked={automaticUpdates}
-              onCheckedChange={setAutomaticUpdates}
-              aria-label="Alterar atualizações automáticas"
-            />
+            <span className="text-xs text-muted-foreground">Manual</span>
           </SettingsRow>
           <SettingsRow
             icon={RefreshCw}
             label="Verificar atualizações"
-            description={`Última verificação: ${settingsMock.updates.lastCheckedAt}`}
+            description={updateQuery.isError ? "Não foi possível consultar atualizações." : updateQuery.data?.updateAvailable ? "Há uma atualização disponível." : "Sistema atualizado."}
           >
             <Button
               variant="outline"
-              onClick={() =>
-                setNotice(
-                  "Nenhuma atualização disponível nesta demonstração local.",
-                )
-              }
-            >
-              Verificar
+              disabled={updateMutation.isPending || !updateQuery.data?.updateAvailable}
+              onClick={() => void updateMutation.mutateAsync().then(() => setNotice("Atualização instalada; serviços serão reiniciados.")).catch(() => setNotice("Não foi possível instalar a atualização."))}
+              >
+              {updateQuery.data?.updateAvailable ? "Atualizar" : "Verificar"}
             </Button>
           </SettingsRow>
         </SettingsSection>

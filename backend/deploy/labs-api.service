@@ -19,6 +19,9 @@ ProtectSystem=strict
 ProtectKernelTunables=true
 ProtectKernelLogs=true
 ProtectControlGroups=true
+ReadWritePaths=/run/labsos
+ReadWritePaths=/var/lib/labsos/catalog
+ReadWritePaths=/var/lib/labsos/update
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 
 [Install]

@@ -161,7 +161,7 @@ export function AppStoreDialog({
                                 ? "bg-primary/15 text-primary opacity-100 disabled:opacity-100"
                                 : ""
                             }`}
-                            disabled={Boolean(installed)}
+                            disabled={Boolean(installed) || !app.installable}
                             onClick={() => {
                               setSelectedApp(app);
                             }}
@@ -170,7 +170,7 @@ export function AppStoreDialog({
                               ? installed.status === "installing"
                                 ? "Instalando"
                                 : "Instalado"
-                              : "Instalar"}
+                              : app.installable ? "Instalar" : "Em breve"}
                           </Button>
                         </div>
                       </CardContent>
@@ -255,7 +255,7 @@ function AppDetails({
           </div>
           <Button
             className="w-full"
-            disabled={Boolean(installed)}
+            disabled={Boolean(installed) || !app.installable}
             onClick={onInstall}
           >
             <PackagePlus data-icon="inline-start" />
@@ -263,7 +263,7 @@ function AppDetails({
               ? installed.status === "installing"
                 ? "Instalando"
                 : "Já instalado"
-              : "Instalar app"}
+              : app.installable ? "Instalar app" : "Em breve"}
           </Button>
           {installed ? (
             <p className="text-xs text-muted-foreground">
@@ -271,7 +271,7 @@ function AppDetails({
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              A instalação é simulada localmente nesta etapa.
+              Este app ainda não possui instalação segura no LabsOS.
             </p>
           )}
         </aside>

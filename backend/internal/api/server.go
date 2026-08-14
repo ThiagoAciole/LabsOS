@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	"labsos/backend/internal/platform"
 )
@@ -19,10 +20,14 @@ func New(provider platform.Provider) http.Handler {
 	s.mux.HandleFunc("GET /api/v1/system/summary", s.systemSummary)
 	s.mux.HandleFunc("GET /api/v1/system/health", s.systemHealth)
 	s.mux.HandleFunc("POST /api/v1/system/{action}", s.power)
+	s.mux.HandleFunc("GET /api/v1/system/update", s.updateStatus)
+	s.mux.HandleFunc("POST /api/v1/system/update", s.applyUpdate)
 	s.mux.HandleFunc("GET /api/v1/apps", s.apps)
 	s.mux.HandleFunc("GET /api/v1/catalog/apps", s.catalog)
+	s.mux.HandleFunc("GET /api/v1/catalog/sources", s.catalogSources)
 	s.mux.HandleFunc("POST /api/v1/apps/{id}/{action}", s.appAction)
 	s.mux.HandleFunc("DELETE /api/v1/apps/{id}", s.removeApp)
+	s.mux.HandleFunc("GET /api/v1/apps/{id}/logs", s.appLogs)
 	s.mux.HandleFunc("GET /api/v1/settings", s.settings)
 	s.mux.HandleFunc("PUT /api/v1/settings/{section}", s.updateSettings)
 	s.mux.HandleFunc("GET /api/v1/jobs/{id}", s.job)
@@ -48,6 +53,15 @@ func (s *server) power(w http.ResponseWriter, r *http.Request) {
 	respond(w, value, err, http.StatusAccepted)
 }
 
+func (s *server) updateStatus(w http.ResponseWriter, r *http.Request) {
+	value, err := s.provider.UpdateStatus(r.Context())
+	respond(w, value, err, http.StatusOK)
+}
+func (s *server) applyUpdate(w http.ResponseWriter, r *http.Request) {
+	value, err := s.provider.ApplyUpdate(r.Context())
+	respond(w, value, err, http.StatusAccepted)
+}
+
 func (s *server) apps(w http.ResponseWriter, r *http.Request) {
 	value, err := s.provider.Apps(r.Context(), false)
 	respond(w, value, err, http.StatusOK)
@@ -55,6 +69,11 @@ func (s *server) apps(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) catalog(w http.ResponseWriter, r *http.Request) {
 	value, err := s.provider.Apps(r.Context(), true)
+	respond(w, value, err, http.StatusOK)
+}
+
+func (s *server) catalogSources(w http.ResponseWriter, r *http.Request) {
+	value, err := s.provider.CatalogSources(r.Context())
 	respond(w, value, err, http.StatusOK)
 }
 
@@ -66,6 +85,23 @@ func (s *server) appAction(w http.ResponseWriter, r *http.Request) {
 func (s *server) removeApp(w http.ResponseWriter, r *http.Request) {
 	value, err := s.provider.RemoveApp(r.Context(), r.PathValue("id"))
 	respond(w, value, err, http.StatusAccepted)
+}
+
+func (s *server) appLogs(w http.ResponseWriter, r *http.Request) {
+	lines := 100
+	if value := r.URL.Query().Get("lines"); value != "" {
+		if parsed, err := strconv.Atoi(value); err == nil {
+			lines = parsed
+		}
+	}
+	if lines < 1 {
+		lines = 1
+	}
+	if lines > 1000 {
+		lines = 1000
+	}
+	value, err := s.provider.AppLogs(r.Context(), r.PathValue("id"), lines)
+	respond(w, map[string]string{"app": r.PathValue("id"), "logs": value}, err, http.StatusOK)
 }
 
 func (s *server) settings(w http.ResponseWriter, r *http.Request) {
