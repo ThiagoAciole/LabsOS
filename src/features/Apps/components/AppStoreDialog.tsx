@@ -136,6 +136,7 @@ export function AppStoreDialog({
                         <div className="flex items-start gap-3">
                           <AppIcon
                             icon={app.icon}
+                            name={app.name}
                             className="size-11 object-contain"
                           />
                           <div className="min-w-0">
@@ -208,7 +209,7 @@ function AppDetails({
       <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.7fr)]">
         <div>
           <div className="flex items-start gap-4">
-            <AppIcon icon={app.icon} className="size-16 object-contain" />
+            <AppIcon icon={app.icon} name={app.name} className="size-16 object-contain" />
             <div>
               <h2 className="text-xl font-medium">{app.name}</h2>
               <p className="mt-1 text-muted-foreground">{app.description}</p>

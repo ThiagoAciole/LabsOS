@@ -8,15 +8,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { DashboardApp } from "../../../types";
+import { AppIcon } from "@/features/Apps/components/AppIcon";
 export function AppCard({ app }: { app: DashboardApp }) {
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-3">
-        <img
-          src={app.icon}
-          alt={`Logo do ${app.name}`}
-          className="size-10 shrink-0 object-contain"
-        />
+        <AppIcon icon={app.icon} name={app.name} className="size-10 shrink-0 object-contain" />
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-medium">{app.name}</h3>
           <span className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">

@@ -40,6 +40,7 @@ export function InstalledAppCard({
         <div className="flex min-w-0 items-start gap-3">
           <AppIcon
             icon={app.icon}
+            name={app.name}
             className="size-11 shrink-0 object-contain"
           />
           <div className="min-w-0 flex-1">

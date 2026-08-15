@@ -45,7 +45,7 @@ export function AppOverviewDrawer({
           <>
             <SheetHeader className="pr-12">
               <div className="flex items-center gap-3">
-                <AppIcon icon={app.icon} className="size-12 object-contain" />
+                <AppIcon icon={app.icon} name={app.name} className="size-12 object-contain" />
                 <div>
                   <SheetTitle>{app.name}</SheetTitle>
                   <SheetDescription>{statusLabel[app.status]}</SheetDescription>

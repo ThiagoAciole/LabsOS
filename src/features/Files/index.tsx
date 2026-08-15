@@ -5,14 +5,14 @@ import { env } from "@/lib/env"
 
 export function FilesPage() {
   return (
-    <div className="flex flex-1 flex-col gap-6 rounded-2xl bg-background/80 p-4 md:p-8">
+    <div className="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl bg-background/80 p-4 md:p-8">
       <div>
         <h1 className="text-3xl font-medium tracking-tight">Files</h1>
         <p className="mt-1 text-muted-foreground">Arquivos do LabsOS</p>
       </div>
       {env.filesUrl ? (
-        <Card className="min-h-[calc(100vh-12rem)] overflow-hidden">
-          <iframe className="h-[calc(100vh-12rem)] w-full border-0" src={env.filesUrl} title="Gerenciador de arquivos" />
+        <Card className="min-h-[calc(100dvh-10rem)] min-w-0 overflow-hidden">
+          <iframe className="h-[calc(100dvh-10rem)] min-h-96 w-full border-0" src={env.filesUrl} title="Gerenciador de arquivos" />
         </Card>
       ) : (
         <Card>
