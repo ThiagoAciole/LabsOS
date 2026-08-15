@@ -156,7 +156,16 @@ func (s *Server) dispatch(ctx context.Context, request Request) (string, error) 
 
 func (s *Server) installCompose(ctx context.Context, app, content string) error {
 	dir := "/opt/labsos/apps/" + app
+	content = strings.ReplaceAll(content, "$AppID", app)
+	content = strings.ReplaceAll(content, "${AppID}", app)
 	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	appData := "/DATA/AppData/" + app
+	if err := os.MkdirAll(appData, 0750); err != nil {
+		return err
+	}
+	if err := os.Chown(appData, 1000, 1000); err != nil {
 		return err
 	}
 	tmp, err := os.CreateTemp(dir, ".compose-*.yaml")

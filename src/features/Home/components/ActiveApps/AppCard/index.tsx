@@ -29,8 +29,9 @@ export function AppCard({ app }: { app: DashboardApp }) {
             variant="secondary"
             size="sm"
             className="min-h-11"
-            disabled
-            aria-label={`Abrir ${app.name} (aguardando integração do servidor)`}
+            disabled={!app.url}
+            onClick={() => app.url && window.open(app.url, "_blank", "noopener,noreferrer")}
+            aria-label={`Abrir ${app.name}`}
           >
             Abrir
           </Button>

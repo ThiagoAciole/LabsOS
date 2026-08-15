@@ -62,6 +62,14 @@ export function AppsPage() {
     }
   }
 
+  function openApp(app: InstalledApp) {
+    if (!app.url) {
+      setNotice(`${app.name} não informou uma URL de acesso.`)
+      return
+    }
+    window.open(app.url, "_blank", "noopener,noreferrer")
+  }
+
   if (appsQuery.isPending) return <section className="flex flex-1 items-center justify-center p-8" role="status">Carregando apps…</section>;
   if (appsQuery.isError) return <section className="flex flex-1 flex-col items-center justify-center gap-3 p-8" role="alert"><p>Não foi possível carregar os apps.</p><Button variant="outline" onClick={() => void appsQuery.refetch()}>Tentar novamente</Button></section>;
 
@@ -149,11 +157,7 @@ export function AppsPage() {
             <InstalledAppCard
               key={app.id}
               app={app}
-              onOpen={(currentApp) =>
-                setNotice(
-                  `Abertura de ${currentApp.name} simulada. A integração será adicionada depois.`,
-                )
-              }
+              onOpen={openApp}
               onOverview={(app) => setSelectedAppId(app.id)}
             />
           ))}
@@ -169,11 +173,7 @@ export function AppsPage() {
       <AppOverviewDrawer
         app={selectedApp}
         onClose={() => setSelectedAppId(null)}
-        onOpen={(app) =>
-          setNotice(
-            `Abertura de ${app.name} simulada. A integração será adicionada depois.`,
-          )
-        }
+        onOpen={openApp}
         onRestart={(app) => void act(app, "restart")}
         onToggle={(app) => void act(app, app.status === "running" ? "stop" : "start")}
         onRemove={(app) => void act(app, "remove")}

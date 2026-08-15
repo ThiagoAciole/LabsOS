@@ -161,13 +161,25 @@ func (p *Provider) Apps(ctx context.Context, catalog bool) ([]platform.App, erro
 		case "syncthing":
 			name, description = "Syncthing", "Continuous file synchronization"
 		}
+		url := appURL(id)
 		status, statusErr := p.apps.Status(ctx, id)
 		if statusErr != nil || status != "running" {
 			status = "stopped"
 		}
-		result = append(result, platform.App{ID: id, Kind: platform.AppKindUser, Name: name, Icon: icon, Description: description, Status: status, Installed: true})
+		result = append(result, platform.App{ID: id, Kind: platform.AppKindUser, Name: name, Icon: icon, Description: description, Status: status, URL: url, Installed: true})
 	}
 	return result, nil
+}
+
+func appURL(id string) string {
+	switch id {
+	case "jellyfin":
+		return "http://labsos.local:8096"
+	case "syncthing":
+		return "http://labsos.local:8384"
+	default:
+		return ""
+	}
 }
 
 func labsdHasApp(names []string, id string) bool {

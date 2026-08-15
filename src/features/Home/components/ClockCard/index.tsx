@@ -1,6 +1,8 @@
-import { CloudRain, MapPin } from "lucide-react";
-import { clockData } from "../../data";
+import { Clock3 } from "lucide-react";
 export function ClockCard() {
+  const now = new Date();
+  const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const date = now.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "short" });
   return (
     <aside
       className="hidden flex-col items-end gap-1.5 text-right text-sm text-muted-foreground md:flex"
@@ -8,18 +10,16 @@ export function ClockCard() {
     >
       <div>
         <time
-          dateTime="2026-09-16T10:31:00-03:00"
+          dateTime={now.toISOString()}
           className="block text-base font-semibold text-foreground tabular-nums"
         >
-          {clockData.time}
+          {time}
         </time>
-        <span className="block text-sm">{clockData.date}</span>
+        <span className="block text-sm capitalize">{date}</span>
       </div>
       <span className="flex items-center gap-2 text-sm">
-        <MapPin className="size-4" />
-        {clockData.city}
-        <CloudRain className="ml-1 size-4 text-primary" />
-        {clockData.temperature}°
+        <Clock3 className="size-4" />
+        Horário local
       </span>
     </aside>
   );
