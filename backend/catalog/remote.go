@@ -15,7 +15,7 @@ type RemoteProvider struct {
 }
 
 type remoteIndex struct {
-	BaseURL string       `json:"base_url"`
+	BaseURL string      `json:"base_url"`
 	Apps    []RemoteApp `json:"apps"`
 }
 
@@ -56,10 +56,19 @@ func (p RemoteProvider) ListApps(ctx context.Context) ([]App, error) {
 	}
 	if baseURL != "" {
 		base, err := url.Parse(baseURL)
-		if err != nil { return nil, err }
+		if err != nil {
+			return nil, err
+		}
 		for i := range remote {
 			if strings.HasPrefix(remote[i].Icon, "/") {
-				if icon, err := base.Parse(remote[i].Icon); err == nil { remote[i].Icon = icon.String() }
+				if icon, err := base.Parse(remote[i].Icon); err == nil {
+					remote[i].Icon = icon.String()
+				}
+			}
+			if strings.HasPrefix(remote[i].ComposeURL, "/") {
+				if compose, err := base.Parse(remote[i].ComposeURL); err == nil {
+					remote[i].ComposeURL = compose.String()
+				}
 			}
 		}
 	}
@@ -74,14 +83,24 @@ func (p RemoteProvider) ListApps(ctx context.Context) ([]App, error) {
 	return apps, nil
 }
 
-func (p RemoteProvider) GetApp(ctx context.Context, id string) (App, error) {
+func (p RemoteProvider) GetApp(id string) (App, error) {
+	ctx := context.Background()
 	apps, err := p.ListApps(ctx)
 	if err != nil {
 		return App{}, err
 	}
 	for _, app := range apps {
 		if app.ID == id {
-			return app, nil
+			if app.ComposeURL == "" {
+				return app, nil
+			}
+			compose, err := ImportCompose(ctx, app.ComposeURL)
+			if err != nil {
+				return App{}, err
+			}
+			compose.ID, compose.Name, compose.Description = app.ID, app.Name, app.Description
+			compose.Icon, compose.Category, compose.Version, compose.Source = app.Icon, app.Category, app.Version, app.Source
+			return compose, nil
 		}
 	}
 	return App{}, fmt.Errorf("catalog app %q not found", id)

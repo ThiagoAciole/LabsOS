@@ -17,3 +17,12 @@ func TestDispatchUsesFixedDockerOperations(t *testing.T) {
 		t.Fatalf("args = %#v, want %#v", got, want)
 	}
 }
+
+func TestSafeAppIDAllowsCasaOSDots(t *testing.T) {
+	if !safeAppID("org.icewhale.2fauth") {
+		t.Fatal("CasaOS app id with internal dots was rejected")
+	}
+	if safeAppID("../escape") || safeAppID("a..b") {
+		t.Fatal("unsafe app id was accepted")
+	}
+}

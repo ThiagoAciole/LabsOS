@@ -21,9 +21,28 @@ type composeDocument struct {
 		PID         string   `yaml:"pid"`
 		IPC         string   `yaml:"ipc"`
 		CapAdd      []string `yaml:"cap_add"`
-		Volumes     []string `yaml:"volumes"`
-		Devices     []string `yaml:"devices"`
+		Volumes     []composeVolume `yaml:"volumes"`
+		Devices     []composeVolume `yaml:"devices"`
 	} `yaml:"services"`
+}
+
+type composeVolume struct {
+	Source string
+}
+
+func (v *composeVolume) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind == yaml.ScalarNode {
+		v.Source = strings.SplitN(value.Value, ":", 2)[0]
+		return nil
+	}
+	var long struct {
+		Source string `yaml:"source"`
+	}
+	if err := value.Decode(&long); err != nil {
+		return err
+	}
+	v.Source = long.Source
+	return nil
 }
 
 func ImportCompose(ctx context.Context, source string) (App, error) {
@@ -43,7 +62,7 @@ func ImportCompose(ctx context.Context, source string) (App, error) {
 			return App{}, fmt.Errorf("unsafe compose service %q", service)
 		}
 		for _, volume := range append(value.Volumes, value.Devices...) {
-			if err := validateComposePath(volume); err != nil {
+			if err := validateComposePath(volume.Source); err != nil {
 				return App{}, fmt.Errorf("service %q: %w", service, err)
 			}
 		}
@@ -108,7 +127,7 @@ func validateComposePath(value string) error {
 	if strings.Contains(path, "..") || strings.Contains(path, "docker.sock") {
 		return fmt.Errorf("unsafe host path")
 	}
-	if strings.HasPrefix(path, "/") && !strings.HasPrefix(path, "/DATA/Apps/") && !strings.HasPrefix(path, "/DATA/Media/") && path != "/DATA/Apps" && path != "/DATA/Media" {
+	if strings.HasPrefix(path, "/") && !strings.HasPrefix(path, "/DATA/Apps/") && !strings.HasPrefix(path, "/DATA/Media/") && !strings.HasPrefix(path, "/DATA/AppData/") && path != "/DATA/Apps" && path != "/DATA/Media" && path != "/DATA/AppData" {
 		return fmt.Errorf("host path outside /DATA")
 	}
 	return nil

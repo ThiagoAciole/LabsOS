@@ -24,8 +24,8 @@ func main() {
 		Addr:              addr,
 		Handler:           api.New(provider),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      15 * time.Second,
+		ReadTimeout:       2 * time.Minute,
+		WriteTimeout:      2 * time.Minute,
 		IdleTimeout:       60 * time.Second,
 	}
 	log.Printf("Labs API http://%s Mode %s", addr, provider.Mode())

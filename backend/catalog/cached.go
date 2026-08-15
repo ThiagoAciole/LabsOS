@@ -3,8 +3,9 @@ package catalog
 import "context"
 
 type CachedFetchProvider struct {
-	Fetch Fetch
-	Cache FileCache
+	Fetch   Fetch
+	Resolve func(string) (App, error)
+	Cache   FileCache
 }
 
 func (p CachedFetchProvider) ListApps() ([]App, error) {
@@ -14,7 +15,14 @@ func (p CachedFetchProvider) ListApps() ([]App, error) {
 
 func (p CachedFetchProvider) GetApp(id string) (App, error) {
 	apps, err := p.ListApps(); if err != nil { return App{}, err }
-	for _, app := range apps { if app.ID == id { return app, nil } }
+	for _, app := range apps {
+		if app.ID == id {
+			if app.ComposeURL == "" && p.Resolve != nil {
+				return p.Resolve(id)
+			}
+			return app, nil
+		}
+	}
 	return App{}, ErrNotFound
 }
 

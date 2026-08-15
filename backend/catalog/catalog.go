@@ -17,6 +17,7 @@ type RemoteApp struct {
 	Title       string   `json:"title"`
 	Tagline     string   `json:"tagline"`
 	Categories  []string `json:"categories"`
+	ComposeURL  string   `json:"compose_url"`
 }
 
 type App struct {
@@ -30,6 +31,7 @@ type App struct {
 	Installed   bool   `json:"installed"`
 	Installable bool   `json:"installable"`
 	Compose     string `json:"compose,omitempty"`
+	ComposeURL  string `json:"-"`
 }
 
 func Normalize(remote RemoteApp, source string) (App, error) {
@@ -54,5 +56,5 @@ func Normalize(remote RemoteApp, source string) (App, error) {
 	case "syncthing":
 		id = "syncthing"
 	}
-	return App{ID: id, Name: name, Description: remote.Description, Icon: remote.Icon, Category: category, Version: remote.Version, Source: source, Installable: id == "jellyfin" || id == "syncthing"}, nil
+	return App{ID: id, Name: name, Description: remote.Description, Icon: remote.Icon, Category: category, Version: remote.Version, Source: source, Installable: remote.ComposeURL != "" || id == "jellyfin" || id == "syncthing", ComposeURL: remote.ComposeURL}, nil
 }
