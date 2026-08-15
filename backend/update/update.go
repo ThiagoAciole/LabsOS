@@ -139,10 +139,11 @@ func extract(data []byte, root string) error {
 		if err != nil {
 			return err
 		}
-		target := filepath.Join(root, filepath.Clean("/"+header.Name))
-		if !strings.HasPrefix(target, filepath.Clean(root)+string(os.PathSeparator)) {
+		name := filepath.Clean(header.Name)
+		if filepath.IsAbs(name) || name == ".." || strings.HasPrefix(name, ".."+string(os.PathSeparator)) {
 			return fmt.Errorf("archive path escapes release")
 		}
+		target := filepath.Join(root, name)
 		if header.FileInfo().IsDir() {
 			if err := os.MkdirAll(target, 0750); err != nil {
 				return err
