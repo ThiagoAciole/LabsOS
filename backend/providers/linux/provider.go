@@ -12,6 +12,7 @@ import (
 
 	"labsos/backend/catalog"
 	"labsos/backend/internal/platform"
+	"labsos/backend/internal/version"
 	"labsos/backend/labsd"
 	"labsos/backend/providers/mock"
 	"labsos/backend/update"
@@ -92,7 +93,7 @@ func (*Provider) SystemSummary(ctx context.Context) (platform.SystemSummary, err
 		storageUsed, storageTotal = filesystemUsage("/")
 	}
 
-	summary := platform.SystemSummary{Hostname: hostname, Status: "healthy", UptimeSeconds: uptime, Version: "0.1.0", CPUUsage: cpuUsage(before, after), MemoryUsed: memoryUsed, MemoryTotal: memoryTotal, StorageUsed: storageUsed, StorageTotal: storageTotal, Temperature: temperature(), NetworkOnline: false}
+	summary := platform.SystemSummary{Hostname: hostname, Status: "healthy", UptimeSeconds: uptime, Version: version.Value, CPUUsage: cpuUsage(before, after), MemoryUsed: memoryUsed, MemoryTotal: memoryTotal, StorageUsed: storageUsed, StorageTotal: storageTotal, Temperature: temperature(), NetworkOnline: false}
 	if address := primaryAddress(); address != "" {
 		summary.IPAddress, summary.NetworkOnline = address, true
 	}

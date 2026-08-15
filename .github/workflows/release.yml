@@ -19,11 +19,11 @@ jobs:
       - run: pnpm build
       - run: |
           mkdir -p release/bin release/dashboard
-          GOOS=linux GOARCH=amd64 go build -o release/bin/labs-api ./cmd/labs-api
-          GOOS=linux GOARCH=amd64 go build -o release/bin/labsd ./cmd/labsd
-          GOOS=linux GOARCH=amd64 go build -o release/bin/labs-dashboard ./cmd/labs-dashboard
-          cp -a ../dist/. release/dashboard/
           version="${GITHUB_REF_NAME#v}"
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X labsos/backend/internal/version.Value=${version}" -o release/bin/labs-api ./cmd/labs-api
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X labsos/backend/internal/version.Value=${version}" -o release/bin/labsd ./cmd/labsd
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X labsos/backend/internal/version.Value=${version}" -o release/bin/labs-dashboard ./cmd/labs-dashboard
+          cp -a ../dist/. release/dashboard/
           printf '{"version":"%s"}\n' "$version" > release/version.json
           tar -czf "labsos-v${version}-linux-amd64.tar.gz" -C release .
           sha256sum "labsos-v${version}-linux-amd64.tar.gz" > "labsos-v${version}-linux-amd64.tar.gz.sha256"

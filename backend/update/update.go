@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"labsos/backend/internal/version"
 )
 
 type Manifest struct {
@@ -36,11 +38,11 @@ type Manager struct {
 func (m Manager) CurrentVersion() string {
 	data, err := os.ReadFile(filepath.Join(m.Root, "current", "version.json"))
 	if err != nil {
-		return "0.1.0"
+		return version.Value
 	}
 	var value Manifest
 	if json.Unmarshal(data, &value) != nil || value.Version == "" {
-		return "0.1.0"
+		return version.Value
 	}
 	return value.Version
 }
