@@ -32,7 +32,9 @@ func New() *Provider {
 	remote := catalog.CasaOSCatalogAdapter{Remote: catalog.RemoteProvider{URL: url}, SourceName: "CasaOS/ZimaOS AppStore"}
 	bigbear := catalog.GitComposeProvider{URL: "https://github.com/bigbeartechworld/big-bear-casaos", SourceName: "BigBearCasaOS"}
 	provider := catalog.CachedFetchProvider{Resolve: func(id string) (catalog.App, error) {
-		if app, err := remote.Remote.GetApp(id); err == nil { return app, nil }
+		if app, err := remote.Remote.GetApp(id); err == nil {
+			return app, nil
+		}
 		return bigbear.GetApp(id)
 	}, Fetch: func(ctx context.Context) ([]catalog.App, error) {
 		casa, _ := remote.Remote.ListApps(ctx)
@@ -177,6 +179,8 @@ func appURL(id string) string {
 		return "http://labsos.local:8096"
 	case "syncthing":
 		return "http://labsos.local:8384"
+	case "2fauth":
+		return "http://labsos.local:8000"
 	default:
 		return ""
 	}
