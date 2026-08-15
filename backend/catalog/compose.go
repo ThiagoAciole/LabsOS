@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -23,7 +24,43 @@ type composeDocument struct {
 		CapAdd      []string `yaml:"cap_add"`
 		Volumes     []composeVolume `yaml:"volumes"`
 		Devices     []composeVolume `yaml:"devices"`
+		Ports       []composePort `yaml:"ports"`
 	} `yaml:"services"`
+}
+
+type composePort struct{ Published int }
+
+func (p *composePort) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind == yaml.ScalarNode {
+		parts := strings.Split(value.Value, ":")
+		if len(parts) >= 2 {
+			port := parts[len(parts)-2]
+			if parsed, err := strconv.Atoi(port); err == nil { p.Published = parsed }
+		}
+		return nil
+	}
+	var long struct{ Published any `yaml:"published"` }
+	if err := value.Decode(&long); err != nil { return err }
+	switch published := long.Published.(type) {
+	case int:
+		p.Published = published
+	case string:
+		p.Published, _ = strconv.Atoi(published)
+	}
+	return nil
+}
+
+func PublishedPort(source string) int {
+	content, err := os.ReadFile(source)
+	if err != nil { return 0 }
+	var document composeDocument
+	if yaml.Unmarshal(content, &document) != nil { return 0 }
+	for _, service := range document.Services {
+		for _, port := range service.Ports {
+			if port.Published > 0 { return port.Published }
+		}
+	}
+	return 0
 }
 
 type composeVolume struct {

@@ -63,4 +63,7 @@ func TestComposeImporterAcceptsCasaOSShape(t *testing.T) {
 	if _, err := ImportCompose(context.Background(), path); err != nil {
 		t.Fatalf("CasaOS compose rejected: %v", err)
 	}
+	if port := PublishedPort(path); port != 8000 {
+		t.Fatalf("published port = %d, want 8000", port)
+	}
 }

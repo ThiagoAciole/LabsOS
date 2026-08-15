@@ -2,6 +2,7 @@ package linux
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -174,6 +175,15 @@ func (p *Provider) Apps(ctx context.Context, catalog bool) ([]platform.App, erro
 }
 
 func appURL(id string) string {
+	composePath := filepath.Join("/opt/labsos/apps", id, "compose.yaml")
+	if _, err := os.Stat(composePath); err != nil {
+		matches, _ := filepath.Glob(filepath.Join("/opt/labsos/apps", "*"+id+"*", "compose.yaml"))
+		if len(matches) == 1 { composePath = matches[0] }
+	}
+	if port := catalog.PublishedPort(composePath); port > 0 {
+		host := envOr("LABSOS_PUBLIC_HOST", "192.168.0.2")
+		return fmt.Sprintf("http://%s:%d", host, port)
+	}
 	switch id {
 	case "jellyfin":
 		return "http://labsos.local:8096"
