@@ -11,7 +11,6 @@ Environment=LABSOS_ADDR=127.0.0.1:8080
 ExecStart=/usr/local/bin/labs-api
 Restart=on-failure
 RestartSec=2
-NoNewPrivileges=true
 PrivateTmp=true
 PrivateDevices=true
 ProtectHome=true
