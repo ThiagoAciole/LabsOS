@@ -14,7 +14,6 @@ RestartSec=2
 PrivateTmp=true
 PrivateDevices=true
 ProtectHome=true
-ProtectSystem=strict
 ProtectKernelTunables=true
 ProtectKernelLogs=true
 ProtectControlGroups=true
