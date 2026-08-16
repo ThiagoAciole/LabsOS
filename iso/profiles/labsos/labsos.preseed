@@ -10,7 +10,7 @@ d-i passwd/user-fullname string LabsOS Administrator
 d-i passwd/username string labs
 d-i passwd/user-password-crypted password *
 d-i passwd/user-default-groups string sudo
-d-i pkgsel/include string openssh-server avahi-daemon docker.io docker-compose-plugin
+d-i pkgsel/include string openssh-server avahi-daemon docker.io
 d-i pkgsel/upgrade select full-upgrade
 d-i tasksel/tasksel/first multiselect standard, ssh-server
 d-i grub-installer/bootdev string default
