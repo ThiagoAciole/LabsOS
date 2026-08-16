@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+[ -e /var/lib/labsos/firstboot.done ] && exit 0
+mkdir -p /DATA /DATA/Apps /DATA/Docker/Compose /DATA/Docker/Configs /DATA/Docker/Volumes /DATA/Media /DATA/Projects /DATA/Shared /DATA/Backups /var/lib/labsos/state
+hostnamectl set-hostname "${LABSOS_HOSTNAME:-labs}" 2>/dev/null || true
+if [ ! -s /etc/labsos/secret ]; then umask 077; openssl rand -hex 32 > /etc/labsos/secret; fi
+systemctl enable --now avahi-daemon docker 2>/dev/null || true
+touch /var/lib/labsos/firstboot.done

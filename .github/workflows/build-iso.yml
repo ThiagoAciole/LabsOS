@@ -1,0 +1,16 @@
+name: build-iso
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+jobs:
+  iso:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ISO
+        run: make setup && make packages && make iso
+      - uses: actions/upload-artifact@v4
+        with:
+          name: labsos-iso
+          path: dist/LabsOS-*.{iso,sha256}

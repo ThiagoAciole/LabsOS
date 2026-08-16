@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+mkdir -p /etc/labsos /var/lib/labsos/state /opt/labsos/releases /opt/labsos/runtime /DATA
+for d in Apps Docker/Compose Docker/Configs Docker/Volumes Media/Movies Media/Series Media/Anime Media/Music Media/Photos Media/Books Projects Shared Backups; do mkdir -p "/DATA/$d"; done
+install -m 0755 /usr/lib/labsos/labsos-firstboot /usr/lib/labsos/labsos-firstboot 2>/dev/null || true
+systemctl daemon-reload 2>/dev/null || true
+systemctl enable labsos-firstboot.service 2>/dev/null || true
+ln -sfn "$(find /opt/labsos/releases -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)" /opt/labsos/current 2>/dev/null || true
+exit 0

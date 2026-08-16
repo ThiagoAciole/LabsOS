@@ -1,0 +1,10 @@
+standard
+openssh-server
+avahi-daemon
+docker.io
+docker-compose-plugin
+labsos-core
+labsos-api
+labsd
+labsos-web
+labsos-updater
