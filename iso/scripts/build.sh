@@ -12,7 +12,7 @@ cp "$root/iso/profiles/labsos/labsos.conf" "$cfg/profiles/labsos.conf"
 cp "$root/build/packages"/*.deb "$cfg/profiles/labsos/"
 local_packages=""
 for deb in "$root"/build/packages/*.deb; do local_packages+=" $deb"; done
-printf '\nlocal_packages="%s"\nmirror_files=""\nexport OMIT_DOC_TOOLS=1\n' "$local_packages" >> "$cfg/profiles/labsos.conf"
+printf '\nlocal_packages="%s"\nmirror_files=""\nexport OMIT_DOC_TOOLS=1\nexport DEP11=0\n' "$local_packages" >> "$cfg/profiles/labsos.conf"
 printf '%s\n' "$profile" > "$cfg/profiles/labsos.profile"
 if command -v build-simple-cdd >/dev/null; then
   scdd="$cfg/build-simple-cdd"; cp "$(command -v build-simple-cdd)" "$scdd"

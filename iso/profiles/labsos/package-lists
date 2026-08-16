@@ -3,6 +3,8 @@ tasksel-data
 openssh-server
 avahi-daemon
 docker.io
+zstd
+firmware-realtek
 labsos-core
 labsos-api
 labsd

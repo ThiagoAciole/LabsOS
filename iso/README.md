@@ -11,6 +11,8 @@ make test
 
 `make iso` exige WSL2 Debian/Ubuntu, internet para o mirror Debian e `simple-cdd`. A instalação usa Debian Installer, não seleciona disco automaticamente e não inclui apps opcionais. O preseed não contém senhas; a conta `labs` deve ser criada no fluxo do instalador.
 
+O build inclui `zstd`, firmware Realtek e o plugin oficial Docker Compose v5.1.4 em `/usr/libexec/docker/cli-plugins/docker-compose`.
+
 Para Windows:
 
 ```bash
