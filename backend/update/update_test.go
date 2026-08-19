@@ -38,6 +38,29 @@ func TestManagerDownloadsChecksAndActivatesRelease(t *testing.T) {
 	}
 }
 
+func TestExtractRejectsSymlinkAndLinkEntries(t *testing.T) {
+	root := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "outside")
+	if err := os.WriteFile(outside, []byte("safe"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "escape")); err != nil {
+		t.Fatal(err)
+	}
+	archive := makeArchiveWithEntry(t, &tar.Header{Name: "escape/pwned", Mode: 0600, Size: 4}, []byte("oops"))
+	if err := extract(archive, root); err == nil {
+		t.Fatal("expected extraction through symlink to be rejected")
+	}
+	if got, err := os.ReadFile(outside); err != nil || string(got) != "safe" {
+		t.Fatalf("outside file changed: %q, %v", got, err)
+	}
+
+	archive = makeArchiveWithEntry(t, &tar.Header{Name: "link", Typeflag: tar.TypeSymlink, Linkname: outside}, nil)
+	if err := extract(archive, t.TempDir()); err == nil {
+		t.Fatal("expected symlink archive entry to be rejected")
+	}
+}
+
 func makeArchive(t *testing.T, version string) []byte {
 	var output []byte
 	buffer := new(bytes.Buffer)
@@ -54,4 +77,26 @@ func makeArchive(t *testing.T, version string) []byte {
 	gz.Close()
 	output = buffer.Bytes()
 	return output
+}
+
+func makeArchiveWithEntry(t *testing.T, header *tar.Header, data []byte) []byte {
+	buffer := new(bytes.Buffer)
+	gz := gzip.NewWriter(buffer)
+	tw := tar.NewWriter(gz)
+	header.Size = int64(len(data))
+	if err := tw.WriteHeader(header); err != nil {
+		t.Fatal(err)
+	}
+	if len(data) > 0 {
+		if _, err := tw.Write(data); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := gz.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buffer.Bytes()
 }

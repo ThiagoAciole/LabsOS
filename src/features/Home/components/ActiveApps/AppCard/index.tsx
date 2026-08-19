@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { DashboardApp } from "../../../types";
 import { AppIcon } from "@/features/Apps/components/AppIcon";
-export function AppCard({ app }: { app: DashboardApp }) {
+export function AppCard({ app, onAction }: { app: DashboardApp; onAction: (action: "restart" | "stop") => void }) {
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-3">
@@ -46,8 +46,8 @@ export function AppCard({ app }: { app: DashboardApp }) {
               <MoreHorizontal />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled>Reiniciar</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" disabled>
+              <DropdownMenuItem onClick={() => onAction("restart")}>Reiniciar</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => onAction("stop")}>
                 Parar
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -8,8 +8,8 @@ O frontend usa paths relativos `/api/v1/...`; em desenvolvimento, o proxy Vite a
 |---|---|---|---|---|---|---|
 | GET | `/system/summary` | Resumo do sistema | — | `SystemSummary` | 503 no Linux incompleto | READY |
 | GET | `/system/health` | Saúde agregada | — | `SystemHealth` | 503 no Linux incompleto | READY |
-| POST | `/system/reboot` | Solicitar reboot | — | `Job` 202; simulado no mock | 400/503 | READY |
-| POST | `/system/shutdown` | Solicitar shutdown | — | `Job` 202; simulado no mock | 400/503 | READY |
+| POST | `/system/reboot` | Solicitar reboot | — | `Job` 202 quando autorizado | 400/503 | READY |
+| POST | `/system/shutdown` | Solicitar shutdown | — | `Job` 202 quando autorizado | 400/503 | READY |
 | GET | `/apps` | Produtos instalados | — | `App[]` | 503 | READY |
 | GET | `/catalog/apps` | Catálogo disponível | — | `App[]` | 503 | READY |
 | POST | `/apps/{id}/install` | Instalar produto | — | `Job` 202 | 400/404/503 | READY |
@@ -27,10 +27,13 @@ O frontend usa paths relativos `/api/v1/...`; em desenvolvimento, o proxy Vite a
 
 `SystemSummary`: além de hostname, status, uptime, versão, CPU, memória, temperatura e storage, expõe `ipAddress`, `networkOnline`, `networkDownloadBytesPerSecond` e `networkUploadBytesPerSecond`. No WSL, temperatura pode ser `0` quando nenhuma thermal zone é exposta; o frontend apresenta o campo como indisponível.
 
-`App`: `id`, `name`, `icon`, `description`, `status`, `version`, `url`, `updateAvailable`, `installed`. Estados produzidos atualmente: `running` e `stopped`; `installing` e `error` são PLANNED.
+`App`: `id`, `name`, `icon`, `description`, `status`, `version`, `url`, `updateAvailable`, `installed`. Ações assíncronas também podem expor `installing` e `error` com progresso/logs no job.
 
-`Job`: `id`, `status`, `message`. Jobs são concluídos imediatamente e mantidos em memória no mock; execução assíncrona persistente é PARTIAL.
+`Job`: `id`, `status`, `message`. Jobs são mantidos pelo engine local e expostos com progresso/logs quando a operação é assíncrona.
 
-## Não migrado
+## Domínios adicionais
 
-Files e Storage são LEGACY nesta base: havia protótipos antigos, mas não foram promovidos a contrato atual. Autenticação, SSE e persistência são PLANNED.
+Files, Storage, autenticação, sessões, SSE, notificações, auditoria, backups,
+installer, rede, SSH, secrets, scheduler e exposição de serviços possuem rotas
+próprias documentadas no código e são protegidos por autenticação e pela política
+local de operações.

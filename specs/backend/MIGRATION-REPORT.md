@@ -10,11 +10,11 @@
 
 ## Recuperado — KEEP
 
-Tecnologia Go, modo mock no Windows, conceitos de System/Apps/Settings, fixtures de Apps, jobs/events e respostas JSON.
+Tecnologia Go, conceitos de System/Apps/Settings, fixtures de teste, jobs/events e respostas JSON.
 
 ## Adaptado — ADAPT
 
-O estado mock virou `MockProvider`; Apps agora expõem conceitos de produto; settings retornam cópias defensivas; ações geram jobs consultáveis; erros seguem envelope estruturado.
+O estado de teste foi isolado em provider de suporte; Apps agora expõem conceitos de produto; settings retornam cópias defensivas; ações geram jobs consultáveis; erros seguem envelope estruturado.
 
 ## Reescrito — REWRITE
 
@@ -38,20 +38,21 @@ backend/
 
 ## Contrato atual
 
-READY: system summary/health/power, apps/catalog/actions/remove, settings system/network, jobs e events. PARTIAL: jobs síncronos em memória e Linux selecionável sem implementação. LEGACY: Files e Storage antigos. Consulte `API.md`.
+READY: system summary/health/power, apps/catalog/actions/remove, settings,
+jobs/events, Files seguro em `/DATA`, Storage somente leitura, autenticação,
+SSE, notificações, backups, rede, SSH, secrets, installer e exposição de serviços.
+Operações privilegiadas continuam condicionadas à política local. Consulte `API.md`.
 
 ## Testes
 
-Os testes cobrem seleção de provider, transições de Apps, isolamento de Settings, energia simulada, rotas HTTP, jobs e erros estruturados. `go test ./...` e `go build ./...` passaram no Windows. O smoke HTTP validou health, summary, apps, settings, events, ação de App e consulta do job em modo mock.
+Os testes cobrem transições de Apps, isolamento de Settings, energia protegida, rotas HTTP, jobs e erros estruturados. `go test ./...` e `go build ./...` passam no ambiente atual. O smoke HTTP valida health, summary, apps, settings, events, ações e consulta de jobs.
 
 A porta 8080 pertence ao intervalo reservado `8072–8171` nesta máquina. O smoke usou `LABSOS_ADDR=127.0.0.1:18080`; o padrão do produto continua `127.0.0.1:8080`.
 
-## Pendências
+## Pendências operacionais
 
-- persistência SQLite e jobs realmente assíncronos;
-- autenticação, autorização, CSRF/rate limiting e SSE;
-- `labsd` e providers Linux;
-- Files seguro em `/DATA`, se confirmado como próximo domínio;
+- validação em hardware dedicado das operações destrutivas e de rede;
+- backend remoto de catálogo compatível configurado pelo administrador;
 - OpenAPI regenerado a partir do contrato aprovado.
 
 ## Próxima etapa

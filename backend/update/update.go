@@ -23,11 +23,16 @@ type Manifest struct {
 	Version     string `json:"version"`
 	ArtifactURL string `json:"artifactUrl"`
 	SHA256      string `json:"sha256"`
+	Channel     string `json:"channel,omitempty"`
+	Changelog   string `json:"changelog,omitempty"`
 }
 type Status struct {
 	CurrentVersion  string `json:"currentVersion"`
 	LatestVersion   string `json:"latestVersion"`
 	UpdateAvailable bool   `json:"updateAvailable"`
+	Channel         string `json:"channel,omitempty"`
+	Changelog       string `json:"changelog,omitempty"`
+	SHA256          string `json:"sha256,omitempty"`
 }
 type Manager struct {
 	Root        string
@@ -57,6 +62,7 @@ func (m Manager) Check(ctx context.Context) (Status, error) {
 		return status, err
 	}
 	status.LatestVersion, status.UpdateAvailable = manifest.Version, manifest.Version != current
+	status.Channel, status.Changelog, status.SHA256 = manifest.Channel, manifest.Changelog, manifest.SHA256
 	return status, nil
 }
 func (m Manager) Update(ctx context.Context) (Status, error) {
@@ -99,6 +105,30 @@ func (m Manager) Update(ctx context.Context) (Status, error) {
 		return Status{}, err
 	}
 	return Status{CurrentVersion: manifest.Version, LatestVersion: manifest.Version}, nil
+}
+
+func (m Manager) Rollback() (Status, error) {
+	previous := filepath.Join(m.Root, ".current.previous")
+	target, err := filepath.EvalSymlinks(previous)
+	if err != nil {
+		return Status{}, fmt.Errorf("previous release unavailable: %w", err)
+	}
+	if err := activate(m.Root, target); err != nil {
+		return Status{}, err
+	}
+	return Status{CurrentVersion: versionFromRelease(target), LatestVersion: versionFromRelease(target)}, nil
+}
+
+func versionFromRelease(path string) string {
+	data, err := os.ReadFile(filepath.Join(path, "version.json"))
+	if err != nil {
+		return filepath.Base(path)
+	}
+	var manifest Manifest
+	if json.Unmarshal(data, &manifest) == nil && manifest.Version != "" {
+		return manifest.Version
+	}
+	return filepath.Base(path)
 }
 func (m Manager) fetchManifest(ctx context.Context) (Manifest, error) {
 	client := m.Client
@@ -144,6 +174,12 @@ func extract(data []byte, root string) error {
 			return fmt.Errorf("archive path escapes release")
 		}
 		target := filepath.Join(root, name)
+		if err := rejectSymlinkPath(root, target); err != nil {
+			return err
+		}
+		if header.Typeflag == tar.TypeSymlink || header.Typeflag == tar.TypeLink {
+			return fmt.Errorf("archive links are not allowed: %s", name)
+		}
 		if header.FileInfo().IsDir() {
 			if err := os.MkdirAll(target, 0750); err != nil {
 				return err
@@ -167,11 +203,52 @@ func extract(data []byte, root string) error {
 		}
 	}
 }
+
+func rejectSymlinkPath(root, target string) error {
+	relative, err := filepath.Rel(root, target)
+	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(os.PathSeparator)) {
+		return fmt.Errorf("archive path escapes release")
+	}
+	current := root
+	for _, part := range strings.Split(relative, string(os.PathSeparator)) {
+		if part == "." || part == "" {
+			continue
+		}
+		current = filepath.Join(current, part)
+		info, statErr := os.Lstat(current)
+		if statErr != nil {
+			if os.IsNotExist(statErr) {
+				return nil
+			}
+			return statErr
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("archive path contains symlink: %s", current)
+		}
+	}
+	return nil
+}
 func activate(root, release string) error {
 	current := filepath.Join(root, "current")
-	_ = os.Remove(current)
 	if runtime.GOOS != "windows" {
-		return os.Symlink(release, current)
+		temporary := filepath.Join(root, ".current.new")
+		previous := filepath.Join(root, ".current.previous")
+		_ = os.Remove(temporary)
+		if err := os.Symlink(release, temporary); err != nil {
+			return err
+		}
+		_ = os.Remove(previous)
+		if _, err := os.Lstat(current); err == nil {
+			if err := os.Rename(current, previous); err != nil {
+				_ = os.Remove(temporary)
+				return err
+			}
+		}
+		if err := os.Rename(temporary, current); err != nil {
+			_ = os.Rename(previous, current)
+			return err
+		}
+		return nil
 	}
 	return copyDir(release, current)
 }

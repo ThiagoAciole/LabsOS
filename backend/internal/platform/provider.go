@@ -30,7 +30,6 @@ type SystemSummary struct {
 
 type SystemHealth struct {
 	Status     string            `json:"status"`
-	Mode       string            `json:"mode"`
 	Components map[string]string `json:"components"`
 }
 
@@ -42,19 +41,26 @@ const (
 )
 
 type App struct {
-	ID              string  `json:"id"`
-	Kind            AppKind `json:"kind,omitempty"`
-	Name            string  `json:"name"`
-	Icon            string  `json:"icon"`
-	Description     string  `json:"description"`
-	Category        string  `json:"category,omitempty"`
-	Source          string  `json:"source,omitempty"`
-	Status          string  `json:"status"`
-	Version         string  `json:"version,omitempty"`
-	URL             string  `json:"url,omitempty"`
-	UpdateAvailable bool    `json:"updateAvailable"`
-	Installed       bool    `json:"installed"`
-	Installable     bool    `json:"installable"`
+	ID              string   `json:"id"`
+	Kind            AppKind  `json:"kind,omitempty"`
+	Name            string   `json:"name"`
+	Icon            string   `json:"icon"`
+	Description     string   `json:"description"`
+	Category        string   `json:"category,omitempty"`
+	Source          string   `json:"source,omitempty"`
+	Status          string   `json:"status"`
+	Version         string   `json:"version,omitempty"`
+	URL             string   `json:"url,omitempty"`
+	UpdateAvailable bool     `json:"updateAvailable"`
+	Installed       bool     `json:"installed"`
+	Installable     bool     `json:"installable"`
+	Health          string   `json:"health,omitempty"`
+	Dependencies    []string `json:"dependencies,omitempty"`
+	Volumes         []string `json:"volumes,omitempty"`
+	Ports           []int    `json:"ports,omitempty"`
+	Actions         []string `json:"actions,omitempty"`
+	Architecture    []string `json:"architecture,omitempty"`
+	Requirements    []string `json:"requirements,omitempty"`
 }
 
 type Event struct {
@@ -79,10 +85,12 @@ type UpdateStatus struct {
 	CurrentVersion  string `json:"currentVersion"`
 	LatestVersion   string `json:"latestVersion"`
 	UpdateAvailable bool   `json:"updateAvailable"`
+	Channel         string `json:"channel,omitempty"`
+	Changelog       string `json:"changelog,omitempty"`
+	SHA256          string `json:"sha256,omitempty"`
 }
 
 type Provider interface {
-	Mode() string
 	SystemSummary(context.Context) (SystemSummary, error)
 	SystemHealth(context.Context) (SystemHealth, error)
 	Power(context.Context, string) (Job, error)
@@ -93,6 +101,7 @@ type Provider interface {
 	CatalogSources(context.Context) ([]CatalogSource, error)
 	UpdateStatus(context.Context) (UpdateStatus, error)
 	ApplyUpdate(context.Context) (UpdateStatus, error)
+	RollbackUpdate(context.Context) (UpdateStatus, error)
 	Settings(context.Context) (map[string]any, error)
 	UpdateSettings(context.Context, string, map[string]any) (map[string]any, error)
 	Events(context.Context) ([]Event, error)

@@ -6,7 +6,6 @@ Requisito validado: Go 1.26.
 
 ```powershell
 cd C:\Projetos\LabsOS\backend
-$env:LABSOS_MODE = "mock"
 go run ./cmd/labs-api
 ```
 
@@ -20,7 +19,7 @@ go run ./cmd/labs-api
 Saída esperada:
 
 ```text
-Labs API http://localhost:8080 Mode mock
+Labs API http://localhost:8080
 ```
 
 ## Frontend integrado
@@ -70,7 +69,7 @@ Validar com `Invoke-RestMethod http://localhost:18080/api/v1/system/summary`. O 
 
 ## Debian real via SSH
 
-O servidor `labsos` executa `/usr/local/bin/labs-api` como usuário não privilegiado `agent`. A unit versionada é `backend/deploy/labs-api.service`, usa `LABSOS_MODE=linux`, escuta somente em `127.0.0.1:8080` e bloqueia Power.
+O servidor `labsos` executa `/usr/local/bin/labs-api` como usuário não privilegiado `agent`. A unit versionada é `backend/deploy/labs-api.service`, escuta somente em `127.0.0.1:8080` por padrão e protege operações sensíveis.
 
 No Windows, abra o túnel antes do frontend:
 
@@ -80,4 +79,4 @@ ssh -i "$env:USERPROFILE\.ssh\labsos_agent" -N -L 127.0.0.1:18080:127.0.0.1:8080
 
 O frontend continua usando `/api/v1` e o proxy Vite continua apontando para `localhost:18080`. A API não é publicada diretamente na LAN.
 
-O backend é autocontido nessa pasta. Não execute `LABSOS_MODE=linux` esperando integração real: o modo está selecionável, mas retorna indisponível até existir `labsd`.
+O backend é autocontido nessa pasta; o `labsd` fornece as operações de apps Docker quando instalado.

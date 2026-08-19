@@ -144,6 +144,11 @@ func (s *Server) dispatch(ctx context.Context, request Request) (string, error) 
 		return "", s.run(ctx, "compose", "-f", compose, "stop")
 	case "RestartApp":
 		return "", s.run(ctx, "compose", "-f", compose, "restart")
+	case "UpdateApp":
+		if err := s.run(ctx, "compose", "-f", compose, "pull"); err != nil {
+			return "", err
+		}
+		return "", s.run(ctx, "compose", "-f", compose, "up", "-d", "--remove-orphans")
 	case "RemoveApp":
 		return "", s.run(ctx, "compose", "-f", compose, "down")
 	case "StatusApp":

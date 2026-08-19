@@ -7,7 +7,7 @@ Requires=labs-api.service
 Type=simple
 User=root
 Group=root
-Environment=LABSOS_DASHBOARD_ROOT=/opt/labsos/dashboard
+Environment=LABSOS_DASHBOARD_ROOT=/opt/labsos/current/web
 Environment=LABSOS_LAN_CIDR=192.168.0.0/24
 ExecStart=/usr/local/bin/labs-dashboard
 Restart=on-failure

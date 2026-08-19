@@ -20,7 +20,7 @@ O checkout Windows continua sendo o frontend React/Vite e a Labs API Go. O Debia
 ## Ainda pendente
 
 - `labsd` está instalado como unit root no Debian, com socket `root:agent` em `/run/labsos/labsd.sock`.
-- A vertical Jellyfin real está ativa e sua listagem/status já vem do `labsd`; Immich e Home Assistant continuam mock.
+- A vertical Jellyfin real está ativa e sua listagem/status já vem do `labsd`; aplicativos adicionais dependem de manifests declarativos válidos e do `labsd` local.
 - Fonte remota ainda precisa de um endpoint compatível configurado e validado; não foi inventada uma URL externa.
 - Reboot/recovery validado: SSH retornou, Docker/labsd/labs-api ficaram `active` e `enabled`, `/DATA` foi preservado, o socket foi recriado, Files respondeu `200` e Jellyfin respondeu `302`.
 - Provisioning: Debian 13 `x86_64`, Docker Engine 29.7.2, Compose v5.4.0 e `/DATA` confirmados; sudo do `agent` permanece restrito.
@@ -32,4 +32,4 @@ O checkout Windows continua sendo o frontend React/Vite e a Labs API Go. O Debia
 
 ## Próximo passo
 
-Configurar e validar uma fonte remota de catálogo compatível; depois substituir os itens mock restantes por manifests reais, começando somente após aprovação/validação individual.
+Configurar e validar uma fonte remota de catálogo compatível e adicionar manifests declarativos reais conforme cada aplicativo for validado individualmente.

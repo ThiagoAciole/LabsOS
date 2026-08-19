@@ -20,7 +20,7 @@ export function SystemHealth({ health, runningApps }: { health: SystemHealthDTO;
                 {ready ? "Tudo funcionando normalmente" : "O servidor precisa de atenção"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {runningApps} {runningApps === 1 ? "app em execução" : "apps em execução"} · modo {health.mode}
+                {runningApps} {runningApps === 1 ? "app em execução" : "apps em execução"}
               </p>
             </div>
           </div>

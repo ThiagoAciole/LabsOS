@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/sheet";
 import { AppIcon } from "./AppIcon";
 import type { InstalledApp } from "../types";
+import { useAppHealth, useAppMetrics } from "../queries";
 
 const statusLabel = {
   installing: "Instalando",
+  updating: "Atualizando",
   running: "Em execução",
   stopped: "Parado",
   error: "Precisa de atenção",
@@ -26,6 +28,7 @@ export function AppOverviewDrawer({
   onRestart,
   onToggle,
   onRemove,
+  onUpdate,
   pending,
 }: {
   app: InstalledApp | null;
@@ -34,9 +37,12 @@ export function AppOverviewDrawer({
   onRestart: (app: InstalledApp) => void;
   onToggle: (app: InstalledApp) => void;
   onRemove: (app: InstalledApp) => void;
+  onUpdate: (app: InstalledApp) => void;
   pending: boolean;
 }) {
   const running = app?.status === "running";
+  const healthQuery = useAppHealth(app?.id ?? null);
+  const metricsQuery = useAppMetrics(app?.id ?? null);
 
   return (
     <Sheet open={Boolean(app)} onOpenChange={(open) => !open && onClose()}>
@@ -74,6 +80,14 @@ export function AppOverviewDrawer({
                   </span>
                 </div>
               </div>
+              <div className="rounded-lg border p-4 text-sm">
+                <span className="block text-xs text-muted-foreground">Health check</span>
+                <span className={`mt-1 block font-medium ${healthQuery.data?.healthy ? "text-emerald-600" : "text-muted-foreground"}`}>
+                  {healthQuery.isPending ? "Verificando…" : healthQuery.data?.message ?? "Indisponível"}
+                </span>
+                {healthQuery.data?.dependencies?.length ? <span className="mt-2 block text-xs text-muted-foreground">Dependências: {healthQuery.data.dependencies.join(", ")}</span> : null}
+              </div>
+              <div className="rounded-lg border p-4 text-sm"><span className="block text-xs text-muted-foreground">Métricas</span>{metricsQuery.data?.available ? <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span>CPU: {metricsQuery.data.cpuPercent.toFixed(1)}%</span><span>RAM: {formatBytes(metricsQuery.data.memoryUsedBytes)} / {formatBytes(metricsQuery.data.memoryLimitBytes)}</span><span>Rede RX: {formatBytes(metricsQuery.data.networkRXBytes)}</span><span>Rede TX: {formatBytes(metricsQuery.data.networkTXBytes)}</span><span>Leitura: {formatBytes(metricsQuery.data.blockReadBytes)}</span><span>Escrita: {formatBytes(metricsQuery.data.blockWriteBytes)}</span></div> : <span className="mt-1 block text-xs text-muted-foreground">{metricsQuery.isPending ? "Coletando…" : metricsQuery.data?.message ?? "Indisponível"}</span>}</div>
             </div>
             <SheetFooter className="gap-2 border-t">
               <Button disabled={!running} onClick={() => onOpen(app)}>
@@ -95,6 +109,7 @@ export function AppOverviewDrawer({
                 </Button>
               </div>
               <Button variant="outline" disabled={pending} onClick={() => onRemove(app)}><Trash2 data-icon="inline-start" />Desinstalar</Button>
+              {app.updateAvailable && <Button variant="outline" disabled={pending} onClick={() => onUpdate(app)}><RefreshCw data-icon="inline-start" />Atualizar</Button>}
             </SheetFooter>
           </>
         )}
@@ -102,3 +117,5 @@ export function AppOverviewDrawer({
     </Sheet>
   );
 }
+
+function formatBytes(value: number) { if (!Number.isFinite(value) || value < 1) return "0 B"; const units = ["B", "KB", "MB", "GB", "TB"]; const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1); return `${(value / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}` }

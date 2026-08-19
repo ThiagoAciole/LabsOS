@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, PackagePlus, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { AppCategory, InstalledApp, StoreApp } from "../types";
+import { importDeclarativeApp } from "@/api/apps";
 
 export function AppStoreDialog({
   open,
@@ -36,16 +38,24 @@ export function AppStoreDialog({
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<AppCategory | "all">("all");
+  const [source, setSource] = useState("all");
   const [selectedApp, setSelectedApp] = useState<StoreApp | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importID, setImportID] = useState("");
+  const [importName, setImportName] = useState("");
+  const [importCompose, setImportCompose] = useState("services:\n  app:\n    image: example/app");
+  const client = useQueryClient();
+  const importMutation = useMutation({ mutationFn: importDeclarativeApp, onSuccess: () => { setImportOpen(false); setImportID(""); setImportName(""); void client.invalidateQueries({ queryKey: ["catalog"] }); } });
   const installedById = new Map(installedApps.map((app) => [app.id, app]));
   const visibleApps = useMemo(
     () =>
       apps.filter(
         (app) =>
           (category === "all" || app.category === category) &&
+          (source === "all" || app.source === source) &&
           app.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
       ),
-    [apps, category, query],
+    [apps, category, query, source],
   );
 
   function closeStore(nextOpen: boolean) {
@@ -100,12 +110,15 @@ export function AppStoreDialog({
                     <SelectItem value="network">Rede</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select defaultValue="official">
+                <Select value={source} onValueChange={(value) => value && setSource(value)}>
                   <SelectTrigger className="w-full sm:w-36">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="official">Oficial</SelectItem>
+                    <SelectItem value="all">Todas as fontes</SelectItem>
+                    <SelectItem value="BigBearCasaOS">BigBear CasaOS</SelectItem>
+                    <SelectItem value="CasaOS/ZimaOS AppStore">CasaOS / ZimaOS</SelectItem>
+                    <SelectItem value="labs">LabsOS</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="relative min-w-0 flex-1">
@@ -117,11 +130,18 @@ export function AppStoreDialog({
                     placeholder="Buscar um app..."
                   />
                 </div>
-                <Button variant="secondary" disabled>
+                <Button variant="secondary" onClick={() => setImportOpen((value) => !value)}>
                   <PackagePlus data-icon="inline-start" />
-                  Instalação manual
+                  Importar App
                 </Button>
               </div>
+              {importOpen && <form className="mt-4 grid gap-2 rounded-lg border bg-muted/20 p-3 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); importMutation.mutate({ id: importID, name: importName, compose: importCompose }); }}>
+                <Input required value={importID} onChange={(event) => setImportID(event.target.value)} placeholder="ID (ex.: minha-app)" aria-label="ID do App" />
+                <Input required value={importName} onChange={(event) => setImportName(event.target.value)} placeholder="Nome do App" aria-label="Nome do App" />
+                <textarea required value={importCompose} onChange={(event) => setImportCompose(event.target.value)} className="min-h-32 rounded-md border bg-background p-2 font-mono text-xs sm:col-span-2" aria-label="Manifesto Docker Compose" />
+                <div className="flex items-center justify-between gap-3 sm:col-span-2"><span className="text-xs text-muted-foreground">O manifesto será apenas registrado. A instalação exige uma ação protegida.</span><Button type="submit" disabled={importMutation.isPending}>{importMutation.isPending ? "Importando…" : "Registrar manifesto"}</Button></div>
+                {importMutation.isError && <p className="text-sm text-destructive sm:col-span-2">Não foi possível validar o manifesto.</p>}
+              </form>}
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-8">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

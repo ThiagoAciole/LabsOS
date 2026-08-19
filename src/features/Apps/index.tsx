@@ -51,7 +51,7 @@ export function AppsPage() {
     [apps, query, status],
   );
 
-  async function act(app: Pick<InstalledApp, "id" | "name">, action: "install" | "start" | "stop" | "restart" | "remove") {
+  async function act(app: Pick<InstalledApp, "id" | "name">, action: "install" | "start" | "stop" | "restart" | "update" | "downgrade" | "remove") {
     try {
       const job = await mutation.mutateAsync({ id: app.id, action });
       setNotice(job.message);
@@ -177,6 +177,7 @@ export function AppsPage() {
         onRestart={(app) => void act(app, "restart")}
         onToggle={(app) => void act(app, app.status === "running" ? "stop" : "start")}
         onRemove={(app) => void act(app, "remove")}
+        onUpdate={(app) => void act(app, "update")}
         pending={mutation.isPending}
       />
     </section>

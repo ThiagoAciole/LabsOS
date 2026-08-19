@@ -9,6 +9,7 @@ import type { InstalledApp } from "../types";
 
 const statusLabel = {
   installing: "Instalando",
+  updating: "Atualizando",
   running: "Em execução",
   stopped: "Parado",
   error: "Precisa de atenção",
@@ -28,7 +29,7 @@ export function InstalledAppCard({
   return (
     <Card
       className={`flex h-full ${
-        app.status === "installing"
+        app.status === "installing" || app.status === "updating"
           ? "border-primary/30"
           : app.status === "error"
             ? "border-destructive/30"
@@ -50,7 +51,7 @@ export function InstalledAppCard({
                 variant={
                   app.status === "error"
                     ? "destructive"
-                    : app.status === "installing"
+                    : app.status === "installing" || app.status === "updating"
                       ? "secondary"
                       : "outline"
                 }

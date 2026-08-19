@@ -21,17 +21,19 @@ type RemoteApp struct {
 }
 
 type App struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Icon        string `json:"icon"`
-	Category    string `json:"category"`
-	Version     string `json:"version,omitempty"`
-	Source      string `json:"source"`
-	Installed   bool   `json:"installed"`
-	Installable bool   `json:"installable"`
-	Compose     string `json:"compose,omitempty"`
-	ComposeURL  string `json:"-"`
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Icon         string   `json:"icon"`
+	Category     string   `json:"category"`
+	Version      string   `json:"version,omitempty"`
+	Source       string   `json:"source"`
+	Installed    bool     `json:"installed"`
+	Installable  bool     `json:"installable"`
+	Compose      string   `json:"compose,omitempty"`
+	ComposeURL   string   `json:"-"`
+	Architecture []string `json:"architecture,omitempty"`
+	Requirements []string `json:"requirements,omitempty"`
 }
 
 func Normalize(remote RemoteApp, source string) (App, error) {

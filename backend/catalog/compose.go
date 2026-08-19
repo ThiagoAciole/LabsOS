@@ -17,14 +17,14 @@ import (
 
 type composeDocument struct {
 	Services map[string]struct {
-		Privileged  bool     `yaml:"privileged"`
-		NetworkMode string   `yaml:"network_mode"`
-		PID         string   `yaml:"pid"`
-		IPC         string   `yaml:"ipc"`
-		CapAdd      []string `yaml:"cap_add"`
+		Privileged  bool            `yaml:"privileged"`
+		NetworkMode string          `yaml:"network_mode"`
+		PID         string          `yaml:"pid"`
+		IPC         string          `yaml:"ipc"`
+		CapAdd      []string        `yaml:"cap_add"`
 		Volumes     []composeVolume `yaml:"volumes"`
 		Devices     []composeVolume `yaml:"devices"`
-		Ports       []composePort `yaml:"ports"`
+		Ports       []composePort   `yaml:"ports"`
 	} `yaml:"services"`
 }
 
@@ -35,12 +35,18 @@ func (p *composePort) UnmarshalYAML(value *yaml.Node) error {
 		parts := strings.Split(value.Value, ":")
 		if len(parts) >= 2 {
 			port := parts[len(parts)-2]
-			if parsed, err := strconv.Atoi(port); err == nil { p.Published = parsed }
+			if parsed, err := strconv.Atoi(port); err == nil {
+				p.Published = parsed
+			}
 		}
 		return nil
 	}
-	var long struct{ Published any `yaml:"published"` }
-	if err := value.Decode(&long); err != nil { return err }
+	var long struct {
+		Published any `yaml:"published"`
+	}
+	if err := value.Decode(&long); err != nil {
+		return err
+	}
 	switch published := long.Published.(type) {
 	case int:
 		p.Published = published
@@ -51,16 +57,33 @@ func (p *composePort) UnmarshalYAML(value *yaml.Node) error {
 }
 
 func PublishedPort(source string) int {
-	content, err := os.ReadFile(source)
-	if err != nil { return 0 }
-	var document composeDocument
-	if yaml.Unmarshal(content, &document) != nil { return 0 }
-	for _, service := range document.Services {
-		for _, port := range service.Ports {
-			if port.Published > 0 { return port.Published }
-		}
+	ports := PublishedPorts(source)
+	if len(ports) > 0 {
+		return ports[0]
 	}
 	return 0
+}
+
+func PublishedPorts(source string) []int {
+	content, err := os.ReadFile(source)
+	if err != nil {
+		return nil
+	}
+	var document composeDocument
+	if yaml.Unmarshal(content, &document) != nil {
+		return nil
+	}
+	seen := map[int]bool{}
+	ports := []int{}
+	for _, service := range document.Services {
+		for _, port := range service.Ports {
+			if port.Published > 0 && !seen[port.Published] {
+				seen[port.Published] = true
+				ports = append(ports, port.Published)
+			}
+		}
+	}
+	return ports
 }
 
 type composeVolume struct {
@@ -172,7 +195,9 @@ func validateComposePath(value string) error {
 
 func composeName(source string) string {
 	base := filepath.Base(source)
-	if base == "compose.yml" || base == "docker-compose.yml" { return filepath.Base(filepath.Dir(source)) }
+	if base == "compose.yml" || base == "docker-compose.yml" {
+		return filepath.Base(filepath.Dir(source))
+	}
 	return strings.TrimSuffix(strings.TrimSuffix(base, ".yml"), ".yaml")
 }
 func normalizeComposeID(value string) string {

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"labsos/backend/internal/api"
 	"labsos/backend/internal/platform"
@@ -21,6 +22,7 @@ func TestReadyRoutesReturnJSON(t *testing.T) {
 		"/api/v1/catalog/apps",
 		"/api/v1/settings",
 		"/api/v1/events",
+		"/api/v1/scheduler/tasks",
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
@@ -34,6 +36,8 @@ func TestReadyRoutesReturnJSON(t *testing.T) {
 }
 
 func TestAppActionCreatesRetrievableJob(t *testing.T) {
+	t.Setenv("LABSOS_ENABLE_REAL_OPERATIONS", "false")
+	t.Setenv("LABSOS_CONFIRM_REAL_OPERATIONS", "")
 	handler := api.New(mock.New())
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/api/v1/apps/jellyfin/stop", nil))
@@ -51,6 +55,30 @@ func TestAppActionCreatesRetrievableJob(t *testing.T) {
 	}
 }
 
+func TestAppActionIsPlannedWithoutRealOperations(t *testing.T) {
+	t.Setenv("LABSOS_ENABLE_REAL_OPERATIONS", "false")
+	t.Setenv("LABSOS_CONFIRM_REAL_OPERATIONS", "")
+	handler := api.New(mock.New())
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/api/v1/apps/jellyfin/stop", nil))
+	if response.Code != http.StatusAccepted || !strings.Contains(response.Body.String(), "job-") {
+		t.Fatalf("action response: %d %s", response.Code, response.Body.String())
+	}
+	var job platform.Job
+	if err := json.NewDecoder(response.Body).Decode(&job); err != nil {
+		t.Fatal(err)
+	}
+	for range 20 {
+		lookup := httptest.NewRecorder()
+		handler.ServeHTTP(lookup, httptest.NewRequest(http.MethodGet, "/api/v1/jobs/"+job.ID, nil))
+		if strings.Contains(lookup.Body.String(), "planned") {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatal("planned job did not finish")
+}
+
 func TestSettingsUpdateAndPowerSimulation(t *testing.T) {
 	handler := api.New(mock.New())
 	settings := httptest.NewRecorder()
@@ -62,6 +90,17 @@ func TestSettingsUpdateAndPowerSimulation(t *testing.T) {
 	handler.ServeHTTP(power, httptest.NewRequest(http.MethodPost, "/api/v1/system/reboot", nil))
 	if power.Code != http.StatusAccepted || !strings.Contains(power.Body.String(), "simulated") {
 		t.Fatalf("power response: %d %s", power.Code, power.Body.String())
+	}
+}
+
+func TestUpdateIsPlannedWithoutRealOperations(t *testing.T) {
+	t.Setenv("LABSOS_ENABLE_REAL_OPERATIONS", "false")
+	t.Setenv("LABSOS_CONFIRM_REAL_OPERATIONS", "")
+	handler := api.New(mock.New())
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/api/v1/system/update", nil))
+	if response.Code != http.StatusAccepted || !strings.Contains(response.Body.String(), `"simulated":true`) {
+		t.Fatalf("update response: %d %s", response.Code, response.Body.String())
 	}
 }
 

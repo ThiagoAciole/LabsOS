@@ -6,8 +6,15 @@ After=network.target
 Type=simple
 User=agent
 Group=agent
-Environment=LABSOS_MODE=linux
 Environment=LABSOS_ADDR=127.0.0.1:8080
+Environment=LABSOS_STATE_DIR=/var/lib/labsos/state
+Environment=LABSOS_JOBS_FILE=/var/lib/labsos/state/jobs.json
+Environment=LABSOS_SESSIONS_FILE=/var/lib/labsos/state/sessions.json
+Environment=LABSOS_NOTIFICATIONS_FILE=/var/lib/labsos/state/notifications.json
+Environment=LABSOS_AUDIT_FILE=/var/lib/labsos/state/audit.json
+Environment=LABSOS_DECLARATIVE_APPS_FILE=/var/lib/labsos/state/declarative-apps.json
+Environment=LABSOS_SCHEDULER_FILE=/var/lib/labsos/state/scheduler.json
+Environment=LABSOS_EXPOSURES_FILE=/var/lib/labsos/state/exposures.json
 ExecStart=/usr/local/bin/labs-api
 Restart=on-failure
 RestartSec=2
@@ -20,6 +27,7 @@ ProtectControlGroups=true
 ReadWritePaths=/run/labsos
 ReadWritePaths=/var/lib/labsos/catalog
 ReadWritePaths=/var/lib/labsos/update
+ReadWritePaths=/var/lib/labsos/state
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 
 [Install]

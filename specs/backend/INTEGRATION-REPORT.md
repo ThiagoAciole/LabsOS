@@ -15,14 +15,14 @@ Foram usados System Summary/Health/Power, Apps/Catalog/Actions/Remove, Settings 
 ## Features conectadas
 
 - **Home:** summary, health, CPU, RAM, uptime, temperatura disponível, rede, apps em execução e events vêm da API.
-- **Apps:** listagem e drawer compartilham a mesma query; install/start/stop/restart/remove usam jobs síncronos do MockProvider.
+- **Apps:** listagem e drawer compartilham a mesma query; install/start/stop/restart/remove usam o provider Linux e o `labsd` local.
 - **App Store:** catálogo vem da API; categoria, origem, tamanho e destaques são metadata editorial local; instalação manual permanece indisponível.
 - **Settings:** hostname, idioma, remoteAccess, summary, health, reboot e shutdown usam a API. Tema e updates permanecem locais.
 - **Events:** Recent Activity usa `GET /events`; não há SSE nem polling complexo.
 
-## Mocks removidos e restantes
+## Fonte de dados e proteções
 
-System, rede, apps instalados, catálogo operacional, settings suportados e manutenção deixaram de ter mocks React como fonte de verdade. Permanecem metadata editorial da Store, updates, arquitetura, diagnóstico/relatório e relógio/clima. No modo Linux/WSL, Apps, Settings, Events e Jobs ainda usam fallback MockProvider.
+System, rede, apps instalados, catálogo operacional, settings suportados e manutenção usam a API local. Permanecem metadata editorial da Store e alguns valores de apresentação sem fonte nativa. Operações mutáveis são loopback-only por padrão e exigem confirmação explícita; capacidades indisponíveis retornam erro estruturado em vez de simular alterações.
 
 ## Pendências Backend
 
@@ -30,11 +30,15 @@ SQLite, jobs assíncronos, auth, SSE, update subsystem, `labsd`, Docker Apps e v
 
 ## Files
 
-Legacy Files não foi reintroduzido. A direção planejada continua sendo System File App / File Browser. Storage também não foi reintroduzido.
+Files e Storage foram implementados como domínios locais protegidos: Files fica
+restrito a `/DATA` e Storage é somente leitura.
 
 ## Testes
 
-Resultados desta execução devem ser lidos junto ao handoff: testes unitários do client/adapters, Go tests/build, frontend typecheck/build, lint específico e smoke HTTP mock foram executados. O lint global possui dívida preexistente nos primitives shadcn.
+Resultados desta execução devem ser lidos junto ao handoff: testes unitários do
+client/adapters, Go tests/build, frontend typecheck/build, lint específico e
+smoke HTTP local foram executados. O lint global possui dívida preexistente nos
+primitives shadcn.
 
 O LinuxProvider foi validado ao vivo no Ubuntu WSL2 e no servidor Debian 13.6. No Debian, a unit systemd ficou `enabled/active`, executando como `agent`, limitada a `127.0.0.1:8080`; o acesso do frontend ocorre por túnel SSH. Hostname, uptime, CPU, RAM, temperatura, IP e rede retornaram dados reais, e Power respondeu 503.
 

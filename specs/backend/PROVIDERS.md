@@ -1,19 +1,19 @@
 # Providers
 
-`internal/platform.Provider` define o contrato usado pelos handlers: System, Power, Apps, Settings, Events e Jobs. A seleção ocorre uma vez na inicialização por `LABSOS_MODE`.
+`internal/platform.Provider` define o contrato usado pelos handlers: System, Power, Apps, Settings, Events e Jobs. A API inicia com o provider Linux; não há seleção de modo no runtime.
 
-## MockProvider
+## Fixtures de testes
 
-- funcional no Windows sem Debian, Docker, systemd, `/proc`, `/sys` ou hardware;
-- mantém apps, settings, jobs e events em memória;
-- reboot e shutdown apenas criam jobs com mensagem `simulated in mock mode`;
-- não persiste estado após reiniciar o processo.
+Os testes unitários podem usar um provider em memória isolado, apenas como fixture.
+Ele não é selecionável pelo runtime, não é empacotado como backend operacional e
+não altera o comportamento do provider Linux.
 
 ## LinuxProvider
 
-Implementado somente para leitura de System: hostname, uptime, CPU, RAM, temperatura disponível e rede são obtidos de `/proc`, `/sys` e interfaces do kernel. Apps, Settings, Events e Jobs ainda delegam ao MockProvider para preservar o fluxo de desenvolvimento. Power falha fechado com HTTP 503 e nunca executa reboot ou shutdown.
+O provider Linux lê hostname, uptime, CPU, RAM, temperatura disponível e rede de `/proc`, `/sys` e interfaces do kernel. Apps, Settings, Events e Jobs usam fontes locais; capacidades ausentes falham fechado. Power exige a política de operações reais e nunca executa reboot ou shutdown sem autorização.
 
-Esse modo híbrido é temporário e explícito. Docker Apps, discos, Samba, Files e operações privilegiadas continuam fora do LinuxProvider.
+Capacidades ausentes falham fechado. Operações potencialmente destrutivas ou
+privilegiadas continuam protegidas pela política local e exigem confirmação explícita.
 
 ## Apps/Docker
 
@@ -21,8 +21,7 @@ Apps são produtos. Nenhum DTO público contém `containerId`, `composeFile`, `d
 
 ## Segurança
 
-- modos desconhecidos impedem a inicialização;
-- energia e domínios Linux ainda não implementados falham fechado com HTTP 503;
+- energia e domínios Linux indisponíveis falham fechado com HTTP 503;
 - não existe endpoint genérico de comandos;
 - providers recebem `context.Context`;
 - operações privilegiadas futuras exigem métodos tipados e Unix socket local restrito.

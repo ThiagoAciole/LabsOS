@@ -7,28 +7,22 @@ import (
 	"time"
 
 	"labsos/backend/internal/api"
+	"labsos/backend/internal/safety"
 	"labsos/backend/providers"
 )
 
 func main() {
-	mode := os.Getenv("LABSOS_MODE")
-	if mode == "" {
-		mode = "mock"
-	}
-	provider, err := providers.New(mode)
-	if err != nil {
-		log.Fatal(err)
-	}
+	provider := providers.New()
 	addr := listenAddress()
 	server := &http.Server{
-		Addr:              addr,
+		Addr:              safety.Address(addr),
 		Handler:           api.New(provider),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       2 * time.Minute,
 		WriteTimeout:      2 * time.Minute,
 		IdleTimeout:       60 * time.Second,
 	}
-	log.Printf("Labs API http://%s Mode %s", addr, provider.Mode())
+	log.Printf("Labs API http://%s (real operations enabled: %t)", safety.Address(addr), safety.RealOperationsEnabled())
 	log.Fatal(server.ListenAndServe())
 }
 

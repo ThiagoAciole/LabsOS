@@ -1,6 +1,6 @@
 # ISO LabsOS
 
-Builder Debian 13 Trixie para WSL2. O clone em `/mnt/c` funciona, mas o filesystem Linux do WSL é mais rápido.
+Builder Debian 13 Trixie baseado em `live-build`, seguindo o modelo de imagem final do StartOS. Funciona em Ubuntu/Debian Linux nativo e também em WSL2; em WSL2, o filesystem Linux costuma ser mais rápido que `/mnt/c`.
 
 ```bash
 make setup
@@ -9,7 +9,14 @@ make iso
 make test
 ```
 
-`make iso` exige WSL2 Debian/Ubuntu, internet para o mirror Debian e `simple-cdd`. A instalação usa Debian Installer, não seleciona disco automaticamente e não inclui apps opcionais. O preseed não contém senhas; a conta `labs` deve ser criada no fluxo do instalador.
+`make iso` exige Ubuntu/Debian Linux, internet para o mirror Debian e `live-build`. WSL2 é apenas uma alternativa para quem está no Windows. A imagem é construída diretamente como sistema live/hybrid; ela não usa Debian Installer nem `simple-cdd`. O instalador persistente em disco e o first boot definitivo são etapas seguintes do pipeline LabsOS.
+
+O código pode estar em um disco exFAT/NTFS, mas o diretório temporário do `live-build` precisa estar em um filesystem Linux nativo. Se o clone estiver em `/run/media`, use:
+
+```bash
+mkdir -p ~/labsos-image-build
+LABSOS_IMAGE_BUILD_DIR="$HOME/labsos-image-build" make iso
+```
 
 O build inclui `zstd`, firmware Realtek e o plugin oficial Docker Compose v5.1.4 em `/usr/libexec/docker/cli-plugins/docker-compose`.
 

@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { getApps } from "@/api/apps"
 import { getEvents } from "@/api/events"
-import { getSystemHealth, getSystemSummary, toSystemDashboard } from "@/api/system"
+import { getSystemHealth, getSystemMetrics, getSystemSummary } from "@/api/system"
 
 export function useHomeData() {
-  return useQuery({
-    queryKey: ["home"],
-    queryFn: async () => {
-      const [summary, health, apps, events] = await Promise.all([getSystemSummary(), getSystemHealth(), getApps(), getEvents()])
-      return { summary, health, apps, events, dashboard: toSystemDashboard(summary) }
-    },
-  })
+  const summary = useQuery({ queryKey: ["system", "summary"], queryFn: getSystemSummary })
+  const health = useQuery({ queryKey: ["system", "health"], queryFn: getSystemHealth })
+  const apps = useQuery({ queryKey: ["apps"], queryFn: getApps })
+  const events = useQuery({ queryKey: ["events"], queryFn: getEvents })
+  const metrics = useQuery({ queryKey: ["system", "metrics"], queryFn: getSystemMetrics })
+  return { summary, health, apps, events, metrics, isPending: summary.isPending && health.isPending && apps.isPending && events.isPending }
 }

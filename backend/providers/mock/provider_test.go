@@ -47,7 +47,7 @@ func TestPowerIsSimulated(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if job.Status != "success" || job.Message != "reboot simulated in mock mode" {
+	if job.Status != "success" || job.Message != "reboot simulated" {
 		t.Fatalf("unexpected job: %+v", job)
 	}
 }

@@ -27,7 +27,7 @@ func New() *Provider {
 			{ID: "home-assistant", Kind: platform.AppKindUser, Name: "Home Assistant", Icon: "/app-icons/home-assistant.svg", Description: "Home automation", Status: "stopped"},
 		},
 		settings: map[string]any{"hostname": "labsos-dev", "timezone": "America/Sao_Paulo", "language": "pt-BR", "dhcp": true},
-		events:   []platform.Event{{ID: "event-1", Type: "system", Message: "Labs API started in mock mode"}},
+		events:   []platform.Event{{ID: "event-1", Type: "system", Message: "Labs API started"}},
 		jobs:     make(map[string]platform.Job),
 		catalog: catalog.NewBuiltInProvider([]catalog.RemoteApp{
 			{ID: "jellyfin", Name: "Jellyfin", Description: "Personal media server", Category: "media", Version: "10.10.7", Icon: "/app-icons/jellyfin.svg"},
@@ -37,21 +37,19 @@ func New() *Provider {
 	}
 }
 
-func (*Provider) Mode() string { return "mock" }
-
 func (*Provider) SystemSummary(context.Context) (platform.SystemSummary, error) {
 	return platform.SystemSummary{Hostname: "labsos-dev", Status: "healthy", UptimeSeconds: 483012, Version: "0.1.0", CPUUsage: 18.2, MemoryUsed: 3221225472, MemoryTotal: 8589934592, Temperature: 43, StorageUsed: 459561500672, StorageTotal: 999653638144}, nil
 }
 
 func (*Provider) SystemHealth(context.Context) (platform.SystemHealth, error) {
-	return platform.SystemHealth{Status: "healthy", Mode: "mock", Components: map[string]string{"labs-api": "healthy", "provider": "healthy"}}, nil
+	return platform.SystemHealth{Status: "healthy", Components: map[string]string{"labs-api": "healthy", "provider": "healthy"}}, nil
 }
 
 func (p *Provider) Power(_ context.Context, action string) (platform.Job, error) {
 	if action != "reboot" && action != "shutdown" {
 		return platform.Job{}, platform.ErrUnsupported
 	}
-	return p.completeJob(action + " simulated in mock mode"), nil
+	return p.completeJob(action + " simulated"), nil
 }
 
 func (p *Provider) Apps(_ context.Context, catalog bool) ([]platform.App, error) {
@@ -119,6 +117,9 @@ func (*Provider) UpdateStatus(context.Context) (platform.UpdateStatus, error) {
 	return platform.UpdateStatus{CurrentVersion: "0.1.0", LatestVersion: "0.1.0"}, nil
 }
 func (*Provider) ApplyUpdate(context.Context) (platform.UpdateStatus, error) {
+	return platform.UpdateStatus{CurrentVersion: "0.1.0", LatestVersion: "0.1.0"}, nil
+}
+func (*Provider) RollbackUpdate(context.Context) (platform.UpdateStatus, error) {
 	return platform.UpdateStatus{CurrentVersion: "0.1.0", LatestVersion: "0.1.0"}, nil
 }
 

@@ -2,9 +2,9 @@
 
 > **Para agentes executores:** SUB-SKILL OBRIGATÓRIO: usar superpowers:subagent-driven-development (recomendado) ou superpowers:executing-plans para implementar este plano tarefa por tarefa. As etapas usam caixas de seleção (`- [ ]`) para acompanhamento.
 
-**Objetivo:** Consolidar o frontend atual na raiz oficial e migrar uma Labs API Go autocontida, executável em modo mock, sem integrar o React.
+**Objetivo histórico:** Consolidar o frontend atual na raiz oficial e migrar uma Labs API Go autocontida.
 
-**Arquitetura:** O servidor HTTP depende de um contrato `Provider`; a inicialização escolhe Mock ou Linux por `LABSOS_MODE`. O mock mantém estado em memória e o Linux permanece explícito como indisponível até existir `labsd`, sem executar comandos do host.
+**Arquitetura histórica:** O servidor HTTP dependia de um contrato `Provider`. A operação atual usa o provider Linux por padrão e mantém doubles apenas nos testes.
 
 **Stack:** Go 1.26, biblioteca padrão `net/http`, React/TypeScript/Vite preservado.
 
@@ -38,7 +38,7 @@
 **Interfaces:**
 - Produz: `platform.Provider` com System, Apps, AppAction, Settings, UpdateSettings, Events e Job.
 
-- [ ] Escrever testes de estado de Apps, cópia defensiva de Settings e seleção de provider.
+- [x] Escrever testes de estado de Apps e cópia defensiva de Settings; a seleção de provider foi removida do runtime.
 - [ ] Executar `go test ./providers/...` e confirmar falha por implementação ausente.
 - [ ] Implementar o mínimo para passar, sem dependências externas.
 - [ ] Executar `go test ./providers/...` e confirmar sucesso.
@@ -73,5 +73,5 @@
 
 - [ ] Executar `go test ./...` em `backend`.
 - [ ] Executar `go build ./...` em `backend`.
-- [ ] Iniciar com `LABSOS_MODE=mock`, consultar health/system/apps/settings/events e encerrar o processo.
+- [x] Iniciar a API local sem seleção de modo e consultar health/system/apps/settings/events.
 - [ ] Confirmar que o frontend permanece sem alterações causadas pela migração.

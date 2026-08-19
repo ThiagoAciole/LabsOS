@@ -8,18 +8,15 @@ A Labs API é a única fronteira pública entre a interface e o sistema operacio
 - `cmd/labs-api`: processo HTTP;
 - `internal/api`: rotas, DTOs JSON e erros;
 - `internal/platform`: modelos e contrato de provider;
-- `providers/mock`: estado funcional em memória para Windows;
-- `providers/linux`: limite explícito para a futura integração com `labsd`.
+- `providers/mock`: fixture em memória usada somente por testes;
+- `providers/linux`: provider operacional que lê a máquina local e conversa com `labsd`.
 
-## Modos
-
-`LABSOS_MODE=mock` é funcional em Windows, macOS e Linux. `LABSOS_MODE=linux` seleciona o provider real, mas suas operações retornam `503 PROVIDER_UNAVAILABLE` até a implementação do `labsd`.
+O backend usa o provider Linux e coleta dados da máquina local. Operações sensíveis permanecem protegidas pela política de segurança e pelo `labsd`.
 
 ## Executar
 
 ```powershell
 cd C:\Projetos\LabsOS\backend
-$env:LABSOS_MODE = "mock"
 go run ./cmd/labs-api
 ```
 

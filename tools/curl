@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/bin/curl --resolve github.com:443:140.82.112.3 "$@"

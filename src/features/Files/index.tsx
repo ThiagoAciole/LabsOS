@@ -1,28 +1,15 @@
-import { FolderOpen } from "lucide-react"
-
+import { useState } from "react"
+import { ChevronRight, File, FolderOpen, RefreshCw } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { getFiles } from "@/api/settings"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { env } from "@/lib/env"
+
+function formatBytes(value: number) { if (value < 1024) return `${value} B`; const units = ["KB", "MB", "GB"]; let amount = value; let unit = "B"; for (const next of units) { amount /= 1024; unit = next; if (amount < 1024) break }; return `${amount.toFixed(1)} ${unit}` }
 
 export function FilesPage() {
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl bg-background/80 p-4 md:p-8">
-      <div>
-        <h1 className="text-3xl font-medium tracking-tight">Files</h1>
-        <p className="mt-1 text-muted-foreground">Arquivos do LabsOS</p>
-      </div>
-      {env.filesUrl ? (
-        <Card className="min-h-[calc(100dvh-10rem)] min-w-0 overflow-hidden">
-          <iframe className="h-[calc(100dvh-10rem)] min-h-96 w-full border-0" src={env.filesUrl} title="Gerenciador de arquivos" />
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 text-center">
-            <FolderOpen className="size-8 text-primary" />
-            <p className="font-medium">Gerenciador de arquivos indisponível</p>
-            <p className="text-sm text-muted-foreground">O System File App ainda não foi provisionado neste servidor.</p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  )
+  const [path, setPath] = useState(".")
+  const query = useQuery({ queryKey: ["files", path], queryFn: () => getFiles(path) })
+  const parent = path === "." ? "." : path.split("/").slice(0, -1).join("/") || "."
+  return <section className="flex min-w-0 flex-1 flex-col gap-6 rounded-2xl bg-background/80 p-4 md:p-8"><header className="flex items-start justify-between gap-3"><div><h1 className="text-3xl font-medium tracking-tight">Files</h1><p className="mt-1 text-muted-foreground">Conteúdo de /DATA · somente leitura</p></div><Button variant="outline" size="icon" aria-label="Atualizar arquivos" onClick={() => void query.refetch()}><RefreshCw className={query.isFetching ? "animate-spin" : ""} /></Button></header><Card><CardContent className="p-0"><div className="flex items-center gap-1 border-b px-4 py-3 text-sm"><button className="text-primary hover:underline" onClick={() => setPath(".")}>/DATA</button>{path !== "." && path.split("/").map((part, index, parts) => <span key={`${part}-${index}`} className="flex items-center gap-1"><ChevronRight className="size-4 text-muted-foreground" /><button className="hover:underline" onClick={() => setPath(parts.slice(0, index + 1).join("/"))}>{part}</button></span>)}</div>{query.isPending ? <p className="p-8 text-center" role="status">Carregando arquivos…</p> : query.isError ? <div className="p-8 text-center text-sm text-destructive" role="alert">Não foi possível ler este diretório.</div> : <div className="divide-y">{path !== "." && <button className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-muted/40" onClick={() => setPath(parent)}><FolderOpen className="size-5 text-primary" /><span>..</span></button>}{query.data?.entries.map((entry) => <button key={entry.path} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/40" onClick={() => entry.type === "directory" && setPath(entry.path)} disabled={entry.type !== "directory"}><span className="text-primary">{entry.type === "directory" ? <FolderOpen className="size-5" /> : <File className="size-5" />}</span><span className="min-w-0 flex-1 truncate text-sm">{entry.name}</span><span className="text-xs text-muted-foreground">{entry.type === "file" ? formatBytes(entry.size) : "Diretório"}</span></button>)}{query.data?.entries.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">Diretório vazio.</p>}</div>}</CardContent></Card></section>
 }

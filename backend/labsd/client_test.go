@@ -3,9 +3,9 @@ package labsd
 import (
 	"context"
 	"net"
-	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestClientCall(t *testing.T) {
@@ -22,7 +22,7 @@ func TestClientCall(t *testing.T) {
 			conn.Close()
 			break
 		}
-		_ = os.ErrClosed
+		time.Sleep(5 * time.Millisecond)
 	}
 	if err != nil {
 		t.Fatal(err)
