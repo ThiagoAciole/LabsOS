@@ -1,0 +1,9 @@
+services:
+  files:
+    image: ghcr.io/gtsteffaniak/filebrowser:stable
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80"
+    volumes:
+      - /DATA:/srv:rw
+      - /var/lib/labsos/system-apps/files:/home/filebrowser/data:rw

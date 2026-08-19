@@ -1,10 +1,26 @@
 # LabsOS
 
-Base consolidada do LabsOS:
+O LabsOS é um monólito de produto para transformar um servidor doméstico em um
+appliance administrável pelo navegador. A raiz coordena todos os componentes
+do produto, seguindo a ideia do `start-os` do StartOS.
 
-- `src/` e `public/`: frontend React atual;
-- `backend/`: Labs API em Go;
-- `specs/backend/`: contrato e arquitetura atuais do backend.
+## Estrutura do produto
+
+```text
+LabsOS/
+├── backend/          # Core, API, providers e contratos operacionais
+├── web/              # Dashboard, setup wizard e UI do appliance
+├── runtime/          # Limite do runtime e agente privilegiado
+├── packaging/        # ISO, pacotes Debian, kiosk e systemd
+├── assets/           # Assets públicos do produto
+├── docs/             # Contratos e documentação do produto
+├── engineering-docs/ # Planos e registros de implementação
+└── shared-libs/      # Contratos extraídos quando houver múltiplos consumidores
+```
+
+O frontend, backend, runtime e packaging pertencem ao mesmo produto e são
+construídos juntos. A separação acima organiza responsabilidades sem criar
+aplicações independentes.
 
 Home, Apps, App Store, Files e Settings usam a Labs API.
 
@@ -38,4 +54,4 @@ devem produzir efeitos no host.
 
 Em outro terminal, execute `pnpm dev`. O Vite encaminha `/api` para a API Linux local em `localhost:18080`, que coleta dados da máquina onde está rodando.
 
-Detalhes: [`specs/backend/DEVELOPMENT.md`](specs/backend/DEVELOPMENT.md).
+Detalhes: [`docs/backend/DEVELOPMENT.md`](docs/backend/DEVELOPMENT.md).

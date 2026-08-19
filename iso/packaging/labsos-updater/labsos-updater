@@ -1,3 +1,0 @@
-#!/bin/sh
-set -eu
-echo 'labsos-updater: release activation is intentionally conservative; configure a signed manifest before enabling remote updates.'

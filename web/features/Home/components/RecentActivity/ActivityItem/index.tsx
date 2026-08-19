@@ -1,0 +1,23 @@
+import type { Activity } from "../../../types";
+export function ActivityItem({ activity }: { activity: Activity }) {
+  const Icon = activity.icon;
+  return (
+    <div className="flex items-center gap-3 py-2.5">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{activity.title}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {activity.description}
+        </p>
+      </div>
+      <time
+        dateTime={activity.dateTime}
+        className="shrink-0 text-xs text-muted-foreground"
+      >
+        {activity.time}
+      </time>
+    </div>
+  );
+}

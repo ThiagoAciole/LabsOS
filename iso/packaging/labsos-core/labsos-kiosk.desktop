@@ -1,5 +1,0 @@
-[Desktop Entry]
-Name=LabsOS Kiosk
-Comment=LabsOS local dashboard
-Exec=/usr/lib/labsos/labsos-kiosk
-Type=Application

@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+if ! id labs >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash --groups sudo labs
+fi
+printf '%s\n' 'labs:labs' | chpasswd
+mkdir -p /etc/labsos /var/lib/labsos/state /opt/labsos/releases /opt/labsos/runtime /DATA
+chown agent:agent /var/lib/labsos/state 2>/dev/null || true
+for d in Apps Docker/Compose Docker/Configs Docker/Volumes Media/Movies Media/Series Media/Anime Media/Music Media/Photos Media/Books Projects Shared Backups; do mkdir -p "/DATA/$d"; done
+install -m 0755 /usr/lib/labsos/labsos-firstboot /usr/lib/labsos/labsos-firstboot 2>/dev/null || true
+systemctl daemon-reload 2>/dev/null || true
+systemctl enable labsos-firstboot.service 2>/dev/null || true
+systemctl disable lightdm.service labsos-kiosk.service 2>/dev/null || true
+systemctl enable labs-api.service labsd.service labs-dashboard.service labsos-firstboot.service 2>/dev/null || true
+ln -sfn "$(find /opt/labsos/releases -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)" /opt/labsos/current 2>/dev/null || true
+exit 0

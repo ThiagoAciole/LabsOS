@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+url="${LABSOS_KIOSK_URL:-http://127.0.0.1/}"
+
+while ! curl -fsS --max-time 2 "$url" >/dev/null 2>&1; do
+  sleep 1
+done
+
+exec chromium \
+  --kiosk \
+  --no-first-run \
+  --disable-session-crashed-bubble \
+  --disable-infobars \
+  --disable-translate \
+  --check-for-update-interval=31536000 \
+  "$url"
