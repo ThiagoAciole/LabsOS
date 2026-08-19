@@ -8,12 +8,26 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+dist/
 build/
-*.qcow2
+dist-ssr/
+
+# Artefatos de imagem, discos virtuais e montagens de ISO
 *.iso
 *.iso.sha256
-dist-ssr
+*.qcow2
+*.img
+*.raw
+*.vdi
+*.vmdk
+mnt/
+media/
+
+# Dados temporários e referências locais do ambiente de desenvolvimento
+.codex-remote-attachments/
+.tmp-runtime/
+**/.tmp-runtime/
+vendor/
 *.local
 
 # Editor directories and files
