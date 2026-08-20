@@ -1,8 +1,10 @@
 # LabsOS
 
 O LabsOS é um monólito de produto para transformar um servidor doméstico em um
-appliance administrável pelo navegador. A raiz coordena todos os componentes
-do produto, seguindo a ideia do `start-os` do StartOS.
+appliance capaz de executar aplicações self-hosted, APIs, bancos de dados,
+automações, ferramentas de desenvolvimento, agentes de IA e serviços pessoais
+simples. A experiência é inspirada no StartOS, mas o runtime inicial é
+Docker/Compose.
 
 ## Estrutura do produto
 
@@ -22,7 +24,8 @@ O frontend, backend, runtime e packaging pertencem ao mesmo produto e são
 construídos juntos. A separação acima organiza responsabilidades sem criar
 aplicações independentes.
 
-Home, Apps, App Store, Files e Settings usam a Labs API.
+Home, Apps, App Store, Files e Settings usam a Labs API. O contrato futuro de
+instalação e lifecycle será `ServicePackage`; Compose será apenas um adaptador.
 
 ## Desenvolvimento
 

@@ -37,6 +37,20 @@ mkdir -p "$build_dir/config/includes.chroot/opt/labsos/packages" \
   "$build_dir/config/hooks/live" \
   "$build_dir/config/hooks/normal"
 
+# The Live session is the only place where the installer API may access the
+# selected block device. This override is excluded by the installer backend
+# before copying the system to the persistent disk.
+mkdir -p "$build_dir/config/includes.chroot/etc/systemd/system/labs-api.service.d"
+cat > "$build_dir/config/includes.chroot/etc/systemd/system/labs-api.service.d/live-installer.conf" <<'EOF'
+[Service]
+User=root
+Group=root
+PrivateDevices=false
+Environment=LABSOS_ENABLE_REAL_OPERATIONS=true
+Environment=LABSOS_CONFIRM_REAL_OPERATIONS=LIVE_SESSION
+Environment=LABSOS_INSTALLER_ALLOW_DESTRUCTIVE=true
+EOF
+
 cp "$packages_dir"/*.deb "$build_dir/config/includes.chroot/opt/labsos/packages/"
 cp "$root/packaging/profiles/labsos/package-lists" "$build_dir/config/package-lists/labsos.list.chroot"
 cp /usr/lib/ISOLINUX/isolinux.bin "$build_dir/config/includes.chroot/root/isolinux/isolinux.bin"
@@ -47,6 +61,49 @@ cp "$root/packaging/labsos-core/labsos-installer" "$build_dir/config/includes.ch
 chmod 0755 "$build_dir/config/includes.chroot/usr/lib/labsos/labsos-installer"
 cp "$root/packaging/labsos-core/labsos-installer-backend" "$build_dir/config/includes.chroot/usr/lib/labsos/labsos-installer-backend"
 chmod 0755 "$build_dir/config/includes.chroot/usr/lib/labsos/labsos-installer-backend"
+# Install the LabsOS packages on the first Live boot. Some live-build
+# versions do not execute custom chroot hooks when restoring a cached chroot;
+# a systemd bootstrap is deterministic and runs before the kiosk.
+cat > "$build_dir/config/includes.chroot/usr/lib/labsos/labsos-live-bootstrap" <<'EOF'
+#!/bin/sh
+set -eu
+if compgen -G '/opt/labsos/packages/*.deb' >/dev/null; then
+  export DEBIAN_FRONTEND=noninteractive
+  dpkg -i /opt/labsos/packages/*.deb || apt-get -f install -y --allow-unauthenticated
+  rm -rf /opt/labsos/packages
+fi
+# Some live-build versions do not execute the live chroot hook that creates
+# the local account. Create it here before LightDM attempts autologin.
+if ! id labs >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash --groups sudo labs
+fi
+mkdir -p /DATA /DATA/Apps /DATA/Docker/Compose /DATA/Docker/Configs /DATA/Docker/Volumes /DATA/Media /DATA/Projects /DATA/Shared /DATA/Backups /var/lib/labsos/state
+release=$(find /opt/labsos/releases -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+if [ -n "$release" ]; then ln -sfn "$release" /opt/labsos/current; fi
+# The live account must remain usable after all Debian package postinst
+# scripts have run; this keeps the optional local account usable.
+if id labs >/dev/null 2>&1; then printf '%s\n' 'labs:labs' | chpasswd; fi
+systemctl daemon-reload
+systemctl enable --now labs-api labsd labs-dashboard 2>/dev/null || true
+EOF
+chmod 0755 "$build_dir/config/includes.chroot/usr/lib/labsos/labsos-live-bootstrap"
+cat > "$build_dir/config/includes.chroot/etc/systemd/system/labsos-live-bootstrap.service" <<'EOF'
+[Unit]
+Description=LabsOS Live package bootstrap
+Before=labs-api.service labsd.service labs-dashboard.service
+After=local-fs.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/labsos/labsos-live-bootstrap
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+mkdir -p "$build_dir/config/includes.chroot/etc/systemd/system/multi-user.target.wants"
+ln -sf ../labsos-live-bootstrap.service "$build_dir/config/includes.chroot/etc/systemd/system/multi-user.target.wants/labsos-live-bootstrap.service"
 cp /usr/share/live/build/bootloaders/isolinux/*.cfg "$build_dir/config/bootloaders/isolinux/"
 cp /usr/share/live/build/bootloaders/isolinux/splash.svg.in "$build_dir/config/bootloaders/isolinux/"
 cp /usr/lib/ISOLINUX/isolinux.bin "$build_dir/config/bootloaders/isolinux/isolinux.bin"
@@ -73,13 +130,35 @@ set -eu
 if ! id labs >/dev/null 2>&1; then
   useradd --create-home --shell /bin/bash --groups sudo labs
 fi
+if ! id user >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash --groups sudo user
+fi
 printf '%s\n' 'labs:labs' | chpasswd
+printf '%s\n' 'user:user' | chpasswd
 export DEBIAN_FRONTEND=noninteractive
 
 dpkg -i /opt/labsos/packages/*.deb || apt-get -f install -y --allow-unauthenticated
 rm -rf /opt/labsos/packages
 EOF
 chmod 0755 "$build_dir/config/hooks/normal/900-labsos-packages.hook.chroot"
+
+# live-build versions used by Debian can skip normal hooks when restoring a
+# cached chroot. Repeat the package installation in the live stage, which is
+# guaranteed to run against the final filesystem before squashfs is created.
+cat > "$build_dir/config/hooks/live/900-labsos-packages.hook.chroot" <<'EOF'
+#!/bin/sh
+set -eu
+if ! id labs >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash --groups sudo labs
+fi
+printf '%s\n' 'labs:labs' | chpasswd
+export DEBIAN_FRONTEND=noninteractive
+if compgen -G '/opt/labsos/packages/*.deb' >/dev/null; then
+  dpkg -i /opt/labsos/packages/*.deb || apt-get -f install -y --allow-unauthenticated
+  rm -rf /opt/labsos/packages
+fi
+EOF
+chmod 0755 "$build_dir/config/hooks/live/900-labsos-packages.hook.chroot"
 
 cat > "$build_dir/config/includes.chroot/etc/hostname" <<'EOF'
 labs
@@ -106,7 +185,7 @@ lb config \
   --apt-secure false \
   --apt-options "--yes --allow-unauthenticated" \
   --apt-recommends false \
-  --bootappend-live "boot=live components quiet splash username=labs user-password=labs" \
+  --bootappend-live "boot=live components quiet splash systemd.ssh_auto=no" \
   --iso-application "LabsOS $version" \
   --iso-volume "LABSOS_$version" \
   --iso-preparer "LabsOS" \
@@ -138,8 +217,36 @@ else
   sudo lb build
 fi
 
-iso=$(find "$build_dir" -maxdepth 1 -type f -name '*.iso' -print -quit)
-[[ -n "$iso" ]] || { echo 'ERRO: live-build não produziu ISO.' >&2; exit 1; }
+# live-build emits versioned kernel/initrd names on this Debian release, while
+# our custom Syslinux entry uses stable names. Point the entry at the actual
+# files and rebuild only the binary ISO stage.
+kernel=$(find "$build_dir/binary/live" -maxdepth 1 -type f -name 'vmlinuz-*' -printf '%f\n' | sort | head -1)
+initrd=$(find "$build_dir/binary/live" -maxdepth 1 -type f -name 'initrd.img-*' -printf '%f\n' | sort | head -1)
+[[ -n "$kernel" && -n "$initrd" ]] || { echo 'ERRO: kernel/initrd não encontrados na imagem live.' >&2; exit 1; }
+# Keep stable paths for Syslinux and for older tooling while retaining the
+# versioned files emitted by live-build.
+if [[ "$EUID" -eq 0 ]]; then
+  ln -sfn "$kernel" "$build_dir/binary/live/vmlinuz"
+  ln -sfn "$initrd" "$build_dir/binary/live/initrd.img"
+else
+  sudo ln -sfn "$kernel" "$build_dir/binary/live/vmlinuz"
+  sudo ln -sfn "$initrd" "$build_dir/binary/live/initrd.img"
+fi
+sed -i \
+  -e "s|linux /live/vmlinuz$|linux /live/$kernel|" \
+  -e "s|initrd /live/initrd.img$|initrd /live/$initrd|" \
+  "$build_dir/binary/isolinux/live.cfg"
+source_iso=$(find "$build_dir" -maxdepth 1 -type f -name '*.iso' -print -quit)
+[[ -n "$source_iso" ]] || { echo 'ERRO: live-build não produziu ISO.' >&2; exit 1; }
+iso="$build_dir/LabsOS-patched.iso"
+xorriso \
+  -indev "$source_iso" \
+  -outdev "$iso" \
+  -boot_image any replay \
+  -rm /isolinux/live.cfg -- \
+  -map "$build_dir/binary/isolinux/live.cfg" /isolinux/live.cfg \
+  -commit >/dev/null 2>&1
+[[ -f "$iso" ]] || { echo 'ERRO: não foi possível corrigir o live.cfg na ISO.' >&2; exit 1; }
 mkdir -p "$root/dist"
 output="$root/dist/LabsOS-$version-amd64.iso"
 cp "$iso" "$output"

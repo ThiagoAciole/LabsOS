@@ -3,9 +3,6 @@ tasksel-data
 grub-pc
 isolinux
 syslinux-utils
-xorg
-lightdm
-chromium
 curl
 gnupg
 openssh-server

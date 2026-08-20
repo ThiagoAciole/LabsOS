@@ -10,7 +10,11 @@ for d in Apps Docker/Compose Docker/Configs Docker/Volumes Media/Movies Media/Se
 install -m 0755 /usr/lib/labsos/labsos-firstboot /usr/lib/labsos/labsos-firstboot 2>/dev/null || true
 systemctl daemon-reload 2>/dev/null || true
 systemctl enable labsos-firstboot.service 2>/dev/null || true
-systemctl disable lightdm.service labsos-kiosk.service 2>/dev/null || true
+# The Live image needs LightDM/Kiosk for the installer. Disable the graphical
+# session only after the system has been copied to persistent storage.
+if [ ! -d /run/live/medium ]; then
+  systemctl disable lightdm.service labsos-kiosk.service 2>/dev/null || true
+fi
 systemctl enable labs-api.service labsd.service labs-dashboard.service labsos-firstboot.service 2>/dev/null || true
 ln -sfn "$(find /opt/labsos/releases -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)" /opt/labsos/current 2>/dev/null || true
 exit 0

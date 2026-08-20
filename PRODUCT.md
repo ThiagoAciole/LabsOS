@@ -14,7 +14,13 @@ Ele acessa o LabsOS pelo navegador, na rede local ou remotamente, em desktop, ta
 
 ## Product Purpose
 
-O LabsOS permite transformar e administrar um servidor doméstico de forma simples: instalar, abrir e gerenciar apps self-hosted, acessar arquivos e verificar a saúde do servidor sem conhecer a infraestrutura subjacente.
+O LabsOS permite transformar um servidor doméstico em uma plataforma simples
+para executar aplicações self-hosted, APIs, bancos de dados, automações,
+ferramentas de desenvolvimento, agentes de IA e outros serviços pessoais.
+
+O usuário deve conseguir instalar, configurar, conectar, monitorar, atualizar e
+fazer backup desses serviços sem administrar Linux, Docker ou Compose no uso
+diário.
 
 O fluxo mental principal é `Servidor -> LabsOS -> Apps / Files / Status`.
 
@@ -26,7 +32,9 @@ O LabsOS é appliance-first: apresenta Apps, Files e estado do servidor como con
 
 - Uso doméstico e homelab, não administração empresarial, clusters ou dezenas de usuários.
 - Acesso local ou remoto pelo navegador.
-- Apps são a unidade principal de descoberta, instalação e gerenciamento; containers são implementação interna.
+- Apps e stacks são a unidade principal de descoberta, instalação e gerenciamento; containers são implementação interna.
+- O runtime inicial é Docker/Compose por pragmatismo e compatibilidade com o ecossistema self-hosted.
+- LXC não é requisito do produto; isolamento adicional só será considerado se os requisitos de segurança e operação exigirem.
 - SSH pode existir para administração avançada, mas não é requisito para usar o produto.
 
 ## Capabilities and Constraints
@@ -37,7 +45,11 @@ O LabsOS é appliance-first: apresenta Apps, Files e estado do servidor como con
 - Arquivos do usuário, mídia, bancos e volumes persistentes ficam concentrados em `/DATA`.
 - Operações destrutivas ou avançadas de armazenamento permanecem explícitas e manuais inicialmente.
 - O frontend nunca acessa Docker ou Linux diretamente; toda operação passa pela API do LabsOS.
-- A arquitetura atual pretendida é Debian Minimal, Labs Agent/API em Go, Docker Engine, App Runtime, File Service e Labs Dashboard.
+- A arquitetura atual pretendida é Debian Minimal, Labs Core/API em Go, Docker Engine, Docker Compose SDK, App Runtime, File Service e Labs Dashboard.
+- O modelo de serviço deve evoluir para `ServicePackage`, usando Compose como adaptador interno inicial.
+- O estado operacional deve ser persistido em SQLite e publicado por eventos para a interface.
+- Backups devem usar uma estratégia por serviço, com Restic como primeira implementação.
+- Distribuição futura deve usar OCI/ORAS e verificação de artefatos com Cosign.
 - DietPi não é requisito arquitetural; foi apenas um ambiente de experimentação.
 
 ## Brand Commitments
@@ -54,11 +66,13 @@ O LabsOS é appliance-first: apresenta Apps, Files e estado do servidor como con
 
 ## Product Principles
 
-1. Apps, arquivos e saúde do servidor antes da infraestrutura.
+1. Serviços pessoais, arquivos e saúde do servidor antes da infraestrutura.
 2. Nenhum terminal obrigatório no fluxo comum.
 3. Backend como única autoridade sobre o sistema.
 4. Dados do usuário confinados a `/DATA`.
 5. Operações destrutivas sempre explícitas.
+6. Docker é implementação inicial; o contrato do produto é o serviço.
+7. O StartOS é referência de experiência e lifecycle, não uma lista de tecnologias obrigatórias.
 
 ## Accessibility & Inclusion
 

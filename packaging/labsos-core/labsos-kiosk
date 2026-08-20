@@ -1,7 +1,13 @@
 #!/bin/sh
 set -eu
 
-url="${LABSOS_KIOSK_URL:-http://127.0.0.1/}"
+if [ -n "${LABSOS_KIOSK_URL:-}" ]; then
+  url="$LABSOS_KIOSK_URL"
+elif [ -d /run/live/medium ]; then
+  url="http://127.0.0.1/installer"
+else
+  url="http://127.0.0.1/"
+fi
 
 while ! curl -fsS --max-time 2 "$url" >/dev/null 2>&1; do
   sleep 1

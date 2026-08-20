@@ -1,6 +1,13 @@
 #!/bin/sh
 set -eu
 [ -e /var/lib/labsos/firstboot.done ] && exit 0
+# A Live-only API override grants the installer access to the selected disk.
+# It must never survive the copy to the persistent installation.
+if [ ! -d /run/live/medium ]; then
+  rm -f /etc/systemd/system/labs-api.service.d/live-installer.conf
+  rm -f /run/labsos-live.env
+  systemctl daemon-reload 2>/dev/null || true
+fi
 mkdir -p /DATA /DATA/Apps /DATA/Docker/Compose /DATA/Docker/Configs /DATA/Docker/Volumes /DATA/Media /DATA/Projects /DATA/Shared /DATA/Backups /var/lib/labsos/state
 hostnamectl set-hostname "${LABSOS_HOSTNAME:-labs}" 2>/dev/null || true
 release=$(find /opt/labsos/releases -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)

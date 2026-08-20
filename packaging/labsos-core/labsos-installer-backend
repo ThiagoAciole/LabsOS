@@ -77,6 +77,7 @@ mount "$efi" "$target/boot/efi"
 if command -v rsync >/dev/null; then
   rsync -aHAX --numeric-ids --delete \
     --exclude=/dev/* --exclude=/proc/* --exclude=/sys/* --exclude=/run/* \
+    --exclude=/etc/systemd/system/labs-api.service.d/* \
     --exclude=/tmp/* --exclude=/mnt/* --exclude=/media/* --exclude=/lost+found \
     "$source_dir/" "$target/"
 else

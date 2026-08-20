@@ -1,6 +1,9 @@
 # ISO LabsOS
 
-Builder Debian 13 Trixie baseado em `live-build`, seguindo o modelo de imagem final do StartOS. Funciona em Ubuntu/Debian Linux nativo e também em WSL2; em WSL2, o filesystem Linux costuma ser mais rápido que `/mnt/c`.
+Builder Debian 13 Trixie baseado em `live-build`, seguindo o modelo de imagem
+live do StartOS. O LabsOS inicia headless: `labs-api`, `labsd` e o dashboard
+sobem em `multi-user.target`, e o installer é acessado pela rede. Kiosk local
+é opcional e não participa do boot principal.
 
 ```bash
 make setup
@@ -19,6 +22,11 @@ LABSOS_IMAGE_BUILD_DIR="$HOME/labsos-image-build" make iso
 ```
 
 O build inclui `zstd`, firmware Realtek e o plugin oficial Docker Compose v5.1.4 em `/usr/libexec/docker/cli-plugins/docker-compose`.
+
+No QEMU, `make test` encaminha a porta HTTP do guest para `localhost:8080`.
+Abra `http://127.0.0.1:8080` para acessar o installer/dashboard da sessão Live.
+Em hardware físico, use o endereço IP ou nome mDNS do servidor; não é
+necessário login gráfico local.
 
 Para Windows:
 
